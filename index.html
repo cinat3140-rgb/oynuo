@@ -28,15 +28,13 @@
   <header class="topbar">
     <div class="logo">Oynuo <span>Launcher</span></div>
     <nav id="tabs">
-      <button class="tab active" data-id="gamehtml">🎮 Oyunlar</button>
-      <button class="tab" data-id="pchtml">🖥️ PC</button>
+      <button class="tab active" data-id="pchtml">🖥️ PC</button>
       <button class="tab" data-id="torrenthtml">🌊 Torrent</button>
       <button class="tab" data-id="apkhtml">📱 APK</button>
     </nav>
   </header>
   <main class="frame-wrap">
-    <iframe class="active" data-id="gamehtml" src="https://cinat3140-rgb.github.io/gamehtml/" title="Oyun Kütüphanesi"></iframe>
-    <iframe data-id="pchtml" src="https://cinat3140-rgb.github.io/pchtml/" title="PC Oyun Kütüphanesi"></iframe>
+    <iframe class="active" data-id="pchtml" src="https://cinat3140-rgb.github.io/pchtml/" title="PC Oyun Kütüphanesi"></iframe>
     <iframe data-id="torrenthtml" src="https://cinat3140-rgb.github.io/torrenthtml/" title="Torrent Oyun Kütüphanesi"></iframe>
     <iframe data-id="apkhtml" src="https://cinat3140-rgb.github.io/apkhtml/" title="APK Oyun Kütüphanesi"></iframe>
   </main>
@@ -44,7 +42,7 @@
     (function () {
       const tabs = document.querySelectorAll("button.tab");
       const frames = document.querySelectorAll("iframe");
-      const index = { gamehtml: 0, pchtml: 1, torrenthtml: 2, apkhtml: 3 };
+      const index = { pchtml: 0, torrenthtml: 1, apkhtml: 2 };
       function activate(id) {
         tabs.forEach((t) => t.classList.toggle("active", t.dataset.id === id));
         frames.forEach((f) => f.classList.toggle("active", f.dataset.id === id));
@@ -55,7 +53,7 @@
       );
       const hash = location.hash.replace(/^#\//, "");
       if (hash && index.hasOwnProperty(hash)) activate(hash);
-      else activate("gamehtml");
+      else activate("pchtml");
     })();
   </script>
 </body>
