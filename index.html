@@ -125,12 +125,12 @@
           </div>
           <div class="catalog-controls">
             <input id="searchInput" class="search-input" type="search" placeholder="🔍 Oyun ara…" oninput="window.app && app.applySearch(this.value)" />
-            <select id="platformFilter" class="select" onchange="window.app && app.applyPlatform(this.value)">
-              <option value="all">Tüm Platformlar</option>
-              <option value="pc">🖥️ PC</option>
-              <option value="torrent">🌐 Torrent</option>
-              <option value="apk">🤖 APK</option>
-            </select>
+            <nav class="platform-tabs" id="platformTabs" role="tablist" aria-label="Platform seçimi">
+              <button type="button" class="ptab active" data-platform="all" role="tab" aria-selected="true">🗂 Tümü</button>
+              <button type="button" class="ptab" data-platform="pc" role="tab" aria-selected="false">🖥️ PC</button>
+              <button type="button" class="ptab" data-platform="torrent" role="tab" aria-selected="false">🌐 Torrent</button>
+              <button type="button" class="ptab" data-platform="apk" role="tab" aria-selected="false">🤖 APK</button>
+            </nav>
             <select id="catFilter" class="select" onchange="window.app && app.applyFilter(this.value)">
               <option value="">Tüm Kategoriler</option>
             </select>
@@ -288,10 +288,11 @@
         <a href="#/sss">Sık Sorulan Sorular</a>
       </div>
       <div class="footer-col">
-        <h4>Diğer Siteler</h4>
-        <a href="https://cinat3140-rgb.github.io/pchtml/">Oynuo PC</a>
-        <a href="https://cinat3140-rgb.github.io/torrenthtml/">Oynuo Torrent</a>
-        <a href="https://cinat3140-rgb.github.io/apkhtml/">Oynuo APK</a>
+        <h4>Oynuo</h4>
+        <a href="#/katalog">Tüm Oyunlar</a>
+        <a href="#" onclick="window.app && app.applyPlatform('pc'); location.hash='/katalog'; return false;">PC Oyunları</a>
+        <a href="#" onclick="window.app && app.applyPlatform('torrent'); location.hash='/katalog'; return false;">Torrent</a>
+        <a href="#" onclick="window.app && app.applyPlatform('apk'); location.hash='/katalog'; return false;">APK & Uygulamalar</a>
       </div>
       <div class="footer-bottom">
         <p class="footer-meta"><span id="footerVersion">v1.4.4</span> · © 2026 Oynuo (Ana). Tüm hakları saklıdır.</p>
@@ -303,5 +304,29 @@
   <button id="toTop" class="to-top" title="Yukarı Dön" aria-label="Yukarı dön">↑</button>
 
   <script src="app.js?v=20260923"></script>
+  <script>
+    (function () {
+      var tabs = document.querySelectorAll("#platformTabs .ptab");
+      function syncTabs(platform) {
+        tabs.forEach(function (b) {
+          var on = (b.dataset.platform || "all") === (platform || "all");
+          b.classList.toggle("active", on);
+          b.setAttribute("aria-selected", on ? "true" : "false");
+        });
+      }
+      tabs.forEach(function (b) {
+        b.addEventListener("click", function () {
+          var p = b.dataset.platform || "all";
+          if (window.app) app.applyPlatform(p);
+          syncTabs(p);
+        });
+      });
+      document.addEventListener("DOMContentLoaded", function () {
+        var plat = null;
+        try { var h = (location.hash || "").toLowerCase(); var m = h.match(/(?:pc|torrent|apk)/); if (m) plat = m[0]; } catch (e) {}
+        syncTabs(plat || "all");
+      });
+    })();
+  </script>
 </body>
 </html>

@@ -532,3 +532,10 @@ h1, h2, h3, p { margin: 0; }
   .app-chips { justify-content: center; }
 }
 .platform-badge{display:inline-block;vertical-align:middle;margin-left:8px;padding:2px 9px;border-radius:999px;font-size:.66rem;font-weight:700;letter-spacing:.08em;color:#fff;background:var(--accent,#4f46e5);box-shadow:0 1px 3px rgba(0,0,0,.25);line-height:1.4;white-space:nowrap}@media(max-width:700px){.platform-badge{margin-left:5px;padding:1px 6px;font-size:.58rem}}
+/* Platform sekmeleri */
+.platform-tabs{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.ptab{border:1px solid var(--border);background:var(--bg-raised);color:var(--text-dim);padding:8px 16px;border-radius:999px;font-size:.85rem;font-weight:600;cursor:pointer;transition:background .15s,color .15s,border-color .15s,transform .1s}
+.ptab:hover{color:var(--text);border-color:var(--primary)}
+.ptab.active{background:var(--primary);border-color:var(--primary);color:#fff;box-shadow:0 4px 14px rgba(109,124,246,.35)}
+.ptab:active{transform:scale(.97)}
+@media(max-width:640px){.ptab{padding:7px 12px;font-size:.8rem}}
