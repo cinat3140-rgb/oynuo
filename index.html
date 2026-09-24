@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Oynuo - Oyun Kütüphanesi</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; font-family: "Segoe UI", Tahoma, Arial, sans-serif; background: #0f1220; color: #e6e9f2; }
+  .topbar { display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: #151a2e; border-bottom: 2px solid #2a3358; position: sticky; top: 0; z-index: 10; }
+  .logo { font-size: 20px; font-weight: 800; letter-spacing: 1px; color: #7ca0ff; white-space: nowrap; }
+  .logo span { color: #ffb04e; }
+  nav { display: flex; gap: 6px; margin-left: auto; flex-wrap: wrap; }
+  button.tab { border: none; background: #212841; color: #c7cdea; padding: 9px 16px; border-radius: 8px 8px 0 0; font-size: 13px; font-weight: 600; cursor: pointer; transition: background .15s, color .15s; }
+  button.tab:hover { background: #2b3455; color: #fff; }
+  button.tab.active { background: #33407a; color: #fff; box-shadow: inset 0 3px 0 #7ca0ff; }
+  .frame-wrap { height: calc(100vh - 56px); }
+  iframe { width: 100%; height: 100%; border: none; display: none; background: #fff; }
+  iframe.active { display: block; }
+  @media (max-width: 640px) {
+    .topbar { flex-direction: column; align-items: flex-start; gap: 8px; }
+    nav { margin-left: 0; width: 100%; overflow-x: auto; }
+    button.tab { flex: 1; border-radius: 8px; white-space: nowrap; }
+  }
+</style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="logo">Oynuo <span>Launcher</span></div>
+    <nav id="tabs">
+      <button class="tab active" data-id="gamehtml">🎮 Oyunlar</button>
+      <button class="tab" data-id="pchtml">🖥️ PC</button>
+      <button class="tab" data-id="torrenthtml">🌊 Torrent</button>
+      <button class="tab" data-id="apkhtml">📱 APK</button>
+    </nav>
+  </header>
+  <main class="frame-wrap">
+    <iframe class="active" data-id="gamehtml" src="https://cinat3140-rgb.github.io/gamehtml/" title="Oyun Kütüphanesi"></iframe>
+    <iframe data-id="pchtml" src="https://cinat3140-rgb.github.io/pchtml/" title="PC Oyun Kütüphanesi"></iframe>
+    <iframe data-id="torrenthtml" src="https://cinat3140-rgb.github.io/torrenthtml/" title="Torrent Oyun Kütüphanesi"></iframe>
+    <iframe data-id="apkhtml" src="https://cinat3140-rgb.github.io/apkhtml/" title="APK Oyun Kütüphanesi"></iframe>
+  </main>
+  <script>
+    (function () {
+      const tabs = document.querySelectorAll("button.tab");
+      const frames = document.querySelectorAll("iframe");
+      const index = { gamehtml: 0, pchtml: 1, torrenthtml: 2, apkhtml: 3 };
+      function activate(id) {
+        tabs.forEach((t) => t.classList.toggle("active", t.dataset.id === id));
+        frames.forEach((f) => f.classList.toggle("active", f.dataset.id === id));
+        history.replaceState(null, "", "#/" + id);
+      }
+      tabs.forEach((tab) =>
+        tab.addEventListener("click", () => activate(tab.dataset.id)),
+      );
+      const hash = location.hash.replace(/^#\//, "");
+      if (hash && index.hasOwnProperty(hash)) activate(hash);
+      else activate("gamehtml");
+    })();
+  </script>
+</body>
+</html>
