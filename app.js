@@ -259,7 +259,14 @@
 
   /* ---------- Actions ---------- */
 
-  function platformInfo(g) {
+  function platformTag(g) {
+  var p = (g.platform || "pc");
+  if (p === "torrent") return { badge: "TORRENT", cls: "badge-torrent" };
+  if (p === "apk") return { badge: "APK", cls: "badge-apk" };
+  return { badge: "PC", cls: "badge-pc" };
+}
+
+function platformInfo(g) {
   var p = (g.platform || "pc");
   if (p === "torrent") {
     var t = g.torrent || {};
@@ -336,9 +343,9 @@ function actionButtons(g, sizeClass) {
     var cat = categoryName(g.categoryId);
     var file = Array.isArray(g.latestFiles) && g.latestFiles.length ? g.latestFiles[0] : null;
     var size = file ? fmtBytes(file.fileSize) : "-";
-    var version = g.latestVersion ? g.latestVersion.version : (g.version || null);
+var version = g.latestVersion ? g.latestVersion.version : (g.version || null);
     var featuredBadge = g.isFeatured ? '<span class="gcard-featured">★ Öne Çıkan</span>' : "";
-    var pi = primaryAction(g).platformExtra;
+    var pi = platformTag(g);
     var platformBadge = pi
       ? '<span class="gcard-platform ' + pi.cls + '">' + pi.badge + "</span>"
       : "";
