@@ -55,6 +55,27 @@
     return d.toLocaleDateString("tr-TR", { year: "numeric", month: "short", day: "numeric" });
   }
 
+  function isNewGame(game) {
+    var base = (game && (game.createdAt || game.releaseDate)) || (game && game.latestVersion && game.latestVersion.releasedAt) || null;
+    if (!base) return false;
+    var t = new Date(base).getTime();
+    if (isNaN(t)) return false;
+    return Date.now() - t < 30 * 24 * 60 * 60 * 1000;
+  }
+
+  function appCta() {
+    var u = (state.catalog && state.catalog.appUpdate && state.catalog.appUpdate.downloadUrl) || null;
+    return '<a class="btn btn-primary btn-lg" href="' + esc(u || "#/indir") + '" target="_blank" rel="noopener">🚀 Oynuo ile Daha Hızlı İndir</a>';
+  }
+
+  function appBanner() {
+    return '<div class="app-promo">' +
+      '<div class="app-promo-icon">⚡</div>' +
+      '<div class="app-promo-text"><strong>İndirme hızın bundan daha fazla 🚀</strong>Oyun dosyalarını site üzerinden tarayıcıda değil, Oynuo uygulamasında çok daha hızlı ve kesintisiz indir.</div>' +
+      '<div class="app-promo-cta">' + appCta() + "</div>" +
+    "</div>";
+  }
+
   function img(url, cls, alt) {
     if (!url) return '<div class="placeholder">🎮</div>';
     return '<img class="' + (cls || "") + '" src="' + esc(url) + '" alt="' + esc(alt || "") + '" loading="lazy" />';
@@ -87,6 +108,8 @@
   /* ---------- Home (Son Eklenenler + Kategoriler) ---------- */
 
   function renderHomeExtras() {
+    var promo = $("#homePromo");
+    if (promo && state.catalog) promo.innerHTML = appBanner();
     var recent = $("#homeRecentGrid");
     if (recent) {
       var games = ((state.catalog && state.catalog.games) || []).slice().sort(function (a, b) {
@@ -285,10 +308,11 @@ function primaryAction(g) {
   if (pi) return { isExternal: true, url: pi.url, platformExtra: pi };
   var file = Array.isArray(g.latestFiles) && g.latestFiles.length ? g.latestFiles[0] : null;
   var isExternal = file ? file.source === "external" : !!(g.externalUrl && !g.downloadUrl);
+  var isInternal = file && (file.source === "uploaded" || !isExternal);
   var url = isExternal
     ? ((file && file.downloadUrl) || g.externalUrl)
     : ((file && file.downloadUrl) || g.downloadUrl);
-  return { isExternal: isExternal, url: url || "", platformExtra: pi };
+  return { isExternal: isExternal, isInternal: isInternal, url: url || "", platformExtra: pi };
 }
 
 function isLinkBroken(file) {
@@ -345,18 +369,25 @@ function actionButtons(g, sizeClass) {
     var size = file ? fmtBytes(file.fileSize) : "-";
 var version = g.latestVersion ? g.latestVersion.version : (g.version || null);
     var featuredBadge = g.isFeatured ? '<span class="gcard-featured">★ Öne Çıkan</span>' : "";
+    var newBadge = isNewGame(g) ? '<span class="gcard-new">✨ YENİ</span>' : "";
+    var popularBadge = g.popularityLabel && !g.isFeatured
+      ? '<span class="gcard-pop ' + (g.popularityLabel === "Çok Popüler" ? "hot" : "warm") + '">' + esc(g.popularityLabel) + "</span>"
+      : "";
     var pi = platformTag(g);
     var platformBadge = pi
       ? '<span class="gcard-platform ' + pi.cls + '">' + pi.badge + "</span>"
       : "";
     var developer = g.developer ? g.developer : (g.publisher || "");
-    var fileBadge = a.isExternal ? "🌐 Harici" : "";
-    var urlLabel = a.isExternal ? (pi ? pi.cta : "Sayfaya Git") : "İndir";
-    var urlIcon = a.isExternal ? (pi ? pi.icon : "🌐") : "⬇";
+    var fileBadge = a.isExternal ? "🌐 Harici" : a.isInternal ? "🚀 Uygulamada" : "";
+    var urlLabel = a.isInternal ? "Oynuo'da İndir" : (a.isExternal ? (pi ? pi.cta : "Sayfaya Git") : "İndir");
+    var urlIcon = a.isInternal ? "🚀" : (a.isExternal ? (pi ? pi.icon : "🌐") : "⬇");
     if (!pi && a.isExternal && isLinkBroken(file)) {
       urlLabel = "Link Koptu";
       urlIcon = "⚠";
     }
+    var urlTarget = a.isInternal
+      ? ((state.catalog && state.catalog.appUpdate && state.catalog.appUpdate.downloadUrl) || "#/indir")
+      : a.url;
     var dateTxt = fmtDate(g.releaseDate || (g.latestVersion && g.latestVersion.releasedAt));
     var metaTop = [
       (dateTxt ? '<span class="gcard-date">📅 ' + dateTxt + "</span>" : ""),
@@ -370,6 +401,7 @@ var version = g.latestVersion ? g.latestVersion.version : (g.version || null);
           '<span class="gcard-overlay"></span>' +
           platformBadge +
           featuredBadge +
+          newBadge +
           '<span class="gcard-play">' +
             '<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M8 5.14v13.72a1 1 0 0 0 1.5.86l11-6.86a1 1 0 0 0 0-1.72l-11-6.86a1 1 0 0 0-1.5.86z"/></svg>' +
           "</span>" +
@@ -378,10 +410,10 @@ var version = g.latestVersion ? g.latestVersion.version : (g.version || null);
           (metaTop ? '<div class="gcard-meta-top">' + metaTop + "</div>" : "") +
           '<a class="gcard-title" href="#/oyun/' + g.id + '">' + esc(g.title) + "</a>" +
           (developer ? '<div class="gcard-dev">' + esc(developer) + "</div>" : "") +
-          (fileBadge ? '<div class="gcard-meta">' + '<span class="gcard-ext">' + fileBadge + "</span>" + brokenBadge(file) + "</div>" : brokenBadge(file) ? '<div class="gcard-meta">' + brokenBadge(file) + "</div>" : "") +
+          (fileBadge || popularBadge ? '<div class="gcard-meta">' + (popularBadge ? popularBadge : "") + (fileBadge ? '<span class="gcard-ext">' + fileBadge + "</span>" : "") + brokenBadge(file) + "</div>" : brokenBadge(file) ? '<div class="gcard-meta">' + brokenBadge(file) + "</div>" : "") +
           '<div class="gcard-actions">' +
             (a.url
-              ? '<a class="btn btn-primary btn-sm" href="' + esc(a.url) + '" target="_blank" rel="noopener nofollow" data-metric="download:' + g.id + '">' + urlIcon + " " + urlLabel + "</a>"
+              ? '<a class="btn btn-primary btn-sm" href="' + esc(urlTarget) + '" target="_blank" rel="noopener nofollow" data-metric="download:' + g.id + '">' + urlIcon + " " + urlLabel + "</a>"
               : '<span class="btn btn-ghost btn-sm" style="cursor:default">Yakında</span>') +
             '<a class="btn btn-ghost btn-sm" href="#/oyun/' + g.id + '">İncele</a>' +
           "</div>" +
@@ -444,6 +476,8 @@ var version = g.latestVersion ? g.latestVersion.version : (g.version || null);
     if (g.genre) tags.push(g.genre);
     if (version) tags.push("v" + version);
     if (g.membersOnly) tags.push("Üyelere Özel");
+    if (isNewGame(g)) tags.push("✨ YENİ");
+    if (g.popularityLabel && !g.isFeatured) tags.push(g.popularityLabel);
 
     var extraInfo = "";
     if (pi && pi.badge === "TORRENT") {
@@ -476,6 +510,10 @@ var version = g.latestVersion ? g.latestVersion.version : (g.version || null);
       actionHtml = brokenNote +
         '<a class="btn btn-primary btn-lg btn-block" href="' + esc(a.url) + '" target="_blank" rel="noopener nofollow" data-metric="download:' + g.id + '">🌐 Sayfaya Git</a>' +
         '<span class="dim" style="font-size:.82rem;text-align:center">Oyun tarayıcıda açılır; dosyayı oradan indirebilirsin.</span>';
+    } else if (a.isInternal) {
+      var appUrl = (state.catalog && state.catalog.appUpdate && state.catalog.appUpdate.downloadUrl) || "#/indir";
+      actionHtml = appBanner() +
+        '<span class="dim" style="font-size:.82rem;text-align:center">Oynuo uygulamasını kur, oyunu uygulama içinden çok daha hızlı indir ve oyna.</span>';
     } else {
       actionHtml = '<a class="btn btn-primary btn-lg btn-block" href="' + esc(a.url) + '" download data-metric="download:' + g.id + '">⬇ İndir</a>' +
         '<span class="dim" style="font-size:.82rem;text-align:center">Dosyayı indir; uygulamada "Oyun Ekle" bölümünden kur.</span>';

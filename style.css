@@ -274,6 +274,18 @@ h1, h2, h3, p { margin: 0; }
 .badge-pc { background: rgba(150,150,150,.92); color: #efefef; }
 .gcard-featured { position: absolute; top: 10px; right: 10px; background: var(--primary); color: #111; font-weight: 700; padding: 4px 10px; border-radius: 999px; font-size: .7rem; letter-spacing: .3px; z-index: 2; }
 [data-theme="light"] .gcard-featured { color: #fff; }
+.gcard-new { position: absolute; top: 10px; right: 10px; background: linear-gradient(135deg, #22c55e, #15803d); color: #fff; font-weight: 700; padding: 4px 10px; border-radius: 999px; font-size: .7rem; letter-spacing: .3px; z-index: 2; box-shadow: 0 2px 8px rgba(34,197,94,.4); }
+.gcard-pop { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: .64rem; font-weight: 700; letter-spacing: .2px; margin-right: 6px; }
+.gcard-pop.hot { background: linear-gradient(135deg, #f97316, #dc2626); color: #fff; }
+.gcard-pop.warm { background: rgba(249, 115, 22, .18); color: var(--accent); border: 1px solid rgba(249,115,22,.4); }
+[data-theme="light"] .gcard-pop.hot { color: #fff; }
+.promo-host { margin-bottom: 14px; }
+.app-promo { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; background: linear-gradient(120deg, rgba(79,70,229,.14), rgba(34,197,94,.1)); border: 1px solid rgba(79,70,229,.35); border-radius: 14px; padding: 14px 18px; }
+.app-promo-icon { font-size: 1.6rem; flex: none; }
+.app-promo-text { flex: 1; min-width: 220px; font-size: .86rem; line-height: 1.5; }
+.app-promo-text strong { display: block; font-size: .96rem; margin-bottom: 2px; }
+.app-promo-cta { flex: none; }
+@media (max-width: 640px) { .app-promo { flex-direction: column; align-items: flex-start; text-align: left; } .app-promo-cta .btn { width: 100%; } }
 .gcard-play { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 1; opacity: 0; transition: opacity .2s; }
 .gcard-play svg { background: rgba(13, 15, 20, .75); border: 2px solid rgba(255,255,255,.25); border-radius: 50%; padding: 10px; width: 46px; height: 46px; color: #fff; }
 .gcard:hover .gcard-play { opacity: 1; }
