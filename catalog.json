@@ -104,8 +104,8 @@
       "membersOnly": false,
       "popularity": 18,
       "stats": {
-        "downloads": 0,
-        "views": 0
+        "views": 9,
+        "downloads": 2
       },
       "coverUrl": "games/30/cover.png",
       "bannerUrl": null,
@@ -127,22 +127,7 @@
         "changelog": "SteamRIP pre-installed surum",
         "releasedAt": "2026-09-24T20:44:52.930Z"
       },
-      "latestFiles": [
-        {
-          "id": 41,
-          "versionId": 40,
-          "source": "none",
-          "kind": "archive",
-          "fileName": "GTAViceCity-oyun.zip",
-          "fileSize": 0,
-          "sha256": "c479c70a29dd3a27c549242e7706844d077e23a68e383f80f87f82612bc0081c",
-          "executablePath": "GTAViceCity-oyun.zip",
-          "downloadUrl": "",
-          "filePath": "games/30/versions/1/GTAViceCity-oyun.zip",
-          "pending": true,
-          "_note": "1.3GB - GitHub 100MB limiti nedeniyle yuklenemiyor; gercek indirme linki admin araci ile eklenecek"
-        }
-      ],
+      "latestFiles": [],
       "torrent": null,
       "apk": null,
       "screenshots": [],
@@ -171,8 +156,8 @@
       "membersOnly": false,
       "popularity": 21,
       "stats": {
-        "downloads": 0,
-        "views": 0
+        "views": 17,
+        "downloads": 3
       },
       "coverUrl": "games/6/cover.png",
       "bannerUrl": null,
@@ -205,17 +190,6 @@
           "sha256": "",
           "executablePath": "",
           "downloadUrl": "https://www.mediafire.com/file/ulm87wkhidz3lhk"
-        },
-        {
-          "id": 40,
-          "versionId": 8,
-          "source": "uploaded",
-          "kind": "file",
-          "fileName": "demo-oyun-dosyasi.bin",
-          "fileSize": 524288,
-          "sha256": "",
-          "executablePath": "demo-oyun-dosyasi.bin",
-          "downloadUrl": "games/6/versions/8/demo-oyun-dosyasi.bin"
         }
       ],
       "torrent": null,

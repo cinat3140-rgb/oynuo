@@ -2,10 +2,10 @@
   "updateAvailable": true,
   "latest": {
     "version": "1.4.5",
-    "notes": "Oynuo PC 1.4.5: sifirdan derlendi ve yayinlandi. Oyun katalogu ve platform sekmeleri (PC / Torrent / APK) guncellendi, kapak gorselleri temizlendi, indirme baglantlari dogrudan calisiyor.",
+    "notes": "Oynuo PC 1.4.5: PC uygulamasinda artik yalnizca gercek PC oyunlari var (sahte APK listesi kaldirildi). Oyun kapak gorelleri uygulama icine gomuldu ve duzgun yukleniyor. Gercek indirme/goruntulenme sayaclari backend uzerinden canli guncelleniyor. Demo oyun dosyalari kaldirildi.",
     "downloadUrl": "downloads/Oynuo_1.4.5_x64-setup.exe",
     "portableUrl": "downloads/Oynuo_PC_1.4.5_portable.exe",
-    "sha256": "E3CF7AC95D64FF91E78A3ACE75446A762187D1A92F1FAA9B209B5CED07E58B38",
-    "portableSha256": "306BE36D66ED2068F56F9454AB1AFC4B8E49484CC25C36485C8A4C6F00C72D68"
+    "sha256": "11B01A90456908F9945822909BC480FB151BF2A33D9516EDFB592025306433AE",
+    "portableSha256": "07F11B5F12F791EF249F75F80AD48F2412B5581E5DCA3DA131A76C5E4DBA8273"
   }
 }
