@@ -131,14 +131,16 @@
         {
           "id": 41,
           "versionId": 40,
-          "source": "uploaded",
+          "source": "none",
           "kind": "archive",
           "fileName": "GTAViceCity-oyun.zip",
-          "fileSize": 1367383097,
+          "fileSize": 0,
           "sha256": "c479c70a29dd3a27c549242e7706844d077e23a68e383f80f87f82612bc0081c",
           "executablePath": "GTAViceCity-oyun.zip",
-          "downloadUrl": "games/30/versions/1/GTAViceCity-oyun.zip",
-          "filePath": "games/30/versions/1/GTAViceCity-oyun.zip"
+          "downloadUrl": "",
+          "filePath": "games/30/versions/1/GTAViceCity-oyun.zip",
+          "pending": true,
+          "_note": "1.3GB - GitHub 100MB limiti nedeniyle yuklenemiyor; gercek indirme linki admin araci ile eklenecek"
         }
       ],
       "torrent": null,
