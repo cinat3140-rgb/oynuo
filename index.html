@@ -8,7 +8,7 @@
   <link rel="icon" href="logo.svg" type="image/svg+xml" />
   <link rel="icon" href="favicon.png" type="image/png" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-  <link rel="stylesheet" href="style.css?v=20260929i" />
+  <link rel="stylesheet" href="style.css?v=20260929j" />
 </head>
 <body>
   
@@ -388,7 +388,19 @@
       <div class="wrap section">
         <h1 class="page-title">Sık Sorulan Sorular</h1>
         <div class="faq">
-          <details><summary>Uygulama ücretli mi?</summary><p>Hayır. Oynuo (Ana) tamamen ücretsizdir.</p></details>
+                  <details class="faq-item">
+          <summary>⚠️ Windows "uyarı" gösteriyor: "Windows Defender SmartScreen uyarısı" veya "Uygulama bilinmeyen yayımcı" — ne yapmalıyım?</summary>
+          <div class="faq-a">Bu, uygulamanın <strong>kod imzalı (sertifikalı) olmamasından</strong> kaynaklanır. Oynuo büyük bir şirkete ait değil ve imzalama sertifikası (yıllık ücretli) henüz alınmamış durumda. <strong>Dosya bozuk ya da zararlı değildir</strong> — sadece imzasız olduğu için Windows uyarı verir. Kurulumu şu şekilde tamamla:<br><br><strong>1. Akıllı Ekran uyarısı:</strong> "Daha fazla bilgi" butonuna tıkla → altta <strong>"Yine de çalıştır"</strong> seçeneği çıkar → tıkla.<br><strong>2. Defender karantina uyarısı:</strong> <em>Ayarlar → Güvenlik → Windows Güvenliği → Virüs ve tehdit koruması → Koruma geçmişi</em> → uyarıyı bul → <em>"Karantinaya alınan öğeyi geri yükle"</em> → <em>"Geri yükle"</em>.<br><strong>3. PowerShell ile tek seferlik izin (en kalıcı çözüm):</strong> kurulum dosyasını indirdiğin klasörde Shift+Sağ tık → PowerShell seçeneğini aç ve şunu yaz:<br><code>Unblock-File -Path ".\Oynuo_1.4.5_x64-setup.exe"</code><br><br>Sonra dosyaya tekrar çift tıkla — uyarı gelmeyecektir.</div>
+        </details>
+        <details class="faq-item">
+          <summary>🔐 Neden uygulama imzasız? Sertifika alınamıyor mu?</summary>
+          <div class="faq-a">Kod imzalama sertifikası (Code Signing Certificate) yıllık ücretlidir. Şu an Oynuo imzasız yayınlanıyor; bu yüzden ilk kurulumda Windows uyarı verir. Dosyanın <strong>doğruluğunu</strong> her zaman SHA256 ile doğrulayabilirsin: indirdiğin dosyanın SHA256 değeri <code>app-update.json</code> içinde yayınlanır. Sertifika alındığında uygulama imzalanacak ve uyarı tamamen kalkacaktır.</div>
+        </details>
+        <details class="faq-item">
+          <summary>🛡️ Güvenlik mi? Kurulumdan önce nasıl doğrularım?</summary>
+          <div class="faq-a">Kurulum dosyasının SHA256 parmak izi <code>app-update.json</code> dosyasında yayınlanır. PowerShell ile kendi indirdiğin dosyanın izini hesaplayıp karşılaştır:<br><code>Get-FileHash ".\Oynuo_1.4.5_x64-setup.exe" -Algorithm SHA256</code><br>Çıkan değer <code>app-update.json</code> içindeki <code>sha256</code> ile birebir aynıysa dosya bozulmamış ve Oynuo tarafından üretilmiştir.</div>
+        </details>
+<details><summary>Uygulama ücretli mi?</summary><p>Hayır. Oynuo (Ana) tamamen ücretsizdir.</p></details>
           <details><summary>Hangi sistemlerde çalışır?</summary><p>Windows 10/11 (64-bit). Güncel bir WebView2 sürümü gereklidir; genellikle otomatik kurulur.</p></details>
           <details><summary>Oyunlar nereden geliyor?</summary><p>Katalog, sunucudaki çevrimiçi API üzerinden güncel tutulur; oyunlar sunucuya eklenen linklerle yayınlanır.</p></details>
           <details><summary>Oyunu siteden de indirebilir miyim?</summary><p>Evet. İndir butonu linki çözer ve dosyayı doğrudan indirmeye başlar; gerekirse sayfada açmaya devam edebilirsin.</p></details>
@@ -440,7 +452,7 @@
   <button id="feedbackBtn" class="feedback-fab" title="Geri Bildirim & Hata Bildir">💬</button>
   <button id="toTop" class="to-top" title="Yukarı Dön" aria-label="Yukarı dön">↑</button>
 
-  <script src="app.js?v=20260929i"></script>
+  <script src="app.js?v=20260929j"></script>
   <script>
     (function () {
       var tabs = document.querySelectorAll("#platformTabs .ptab");
