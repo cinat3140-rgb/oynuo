@@ -91,6 +91,63 @@
   ],
   "games": [
     {
+      "id": 31,
+      "title": "Backrooms: Escape Together",
+      "description": "Bir araştırmacı ekibi olarak, bu tekinsiz labirent (liminal labyrinth) hakkında daha fazla bilgi toplamak üzere Backrooms'a gönderiliyorsunuz. Ancak araştırma görevlerinizi tamamladıktan sonra, bir asansör arızası sizi en tehlikeli katların kalbine doğru hızla düşürerek, geriye tek bir amaç bırakıyor: kaçmak ve hayatta kalmak. Şu anda oynanabilir tek bölüm 0. Kat'tır. Bir giriş niteliğinde olan bu bölümde ekibiniz çeşitli araştırma görevlerini yerine getirmekle yükümlüdür. Bu görevler arasında varlıkların ve önemli noktaların kaydını tutmak, Backrooms hakkında veri toplamak ve kanıt niteliğindeki VHS kasetlerini bulmak yer alabilir. Unreal Engine 5 ile geliştirilen *Backrooms: Escape Together*, Backrooms'un ruhunu gerçekten yansıtan ilk yapım olacak. Bölümler prosedürel olarak oluşturulacak, çarpıcı bir kalitede dinamik ışıklandırmaya sahip olacak ve detaylarla zenginleştirilecektir. Oyunu gerçek bir Backrooms deneyimine dönüştürürken, erken erişim süreci boyunca sürekli yeni bölümler eklenecektir. Yeni nesil grafikler, prosedürel olarak oluşturulan bölümler, özenle hazırlanmış ses tasarımları ve oyuncuyu içine çeken bir oynanış; kendinizi gerçekten Backrooms'ta sıkışıp kalmış, yolunu kaybetmiş bir gezgin gibi hissetmenizi sağlayacak.",
+      "developer": "SteamRIP",
+      "publisher": "SteamRIP",
+      "releaseDate": "2026-09-29T19:35:41.149Z",
+      "categoryId": 7,
+      "genre": "Horror",
+      "platform": "pc",
+      "isFeatured": false,
+      "membersOnly": false,
+      "popularity": 0,
+      "stats": {
+        "views": 0,
+        "downloads": 0
+      },
+      "coverUrl": "games/31/cover.png",
+      "bannerUrl": null,
+      "requirements": {
+        "minimum": {},
+        "recommended": {}
+      },
+      "versions": [
+        {
+          "id": 31,
+          "version": "1.0.0",
+          "changelog": "",
+          "releasedAt": "2026-09-29T19:35:41.149Z"
+        }
+      ],
+      "latestVersion": {
+        "id": 31,
+        "version": "1.0.0",
+        "changelog": "",
+        "releasedAt": "2026-09-29T19:35:41.149Z"
+      },
+      "latestFiles": [
+        {
+          "id": 31,
+          "versionId": 31,
+          "source": "external",
+          "kind": "file",
+          "fileName": "Backrooms: Escape Together",
+          "fileSize": 13421773,
+          "sha256": "",
+          "executablePath": "",
+          "downloadUrl": "https://gofile.io/d/uCNsCt"
+        }
+      ],
+      "torrent": null,
+      "apk": null,
+      "screenshots": [],
+      "category": "horror",
+      "createdAt": "2026-09-29T19:35:41.149Z",
+      "popularityLabel": ""
+    },
+    {
       "id": 30,
       "title": "Grand Theft Auto: Vice City",
       "description": "SteamRIP onceden kurulmus (pre-installed) GTA Vice City surumu. 1986 Miami'sinin neonlu sokaklarinda Tommy Vercetti olarak suc imparatorlugu kur. Kurulum gerektirmez, gta-vc.exe ile dogrudan oyna.",
@@ -217,5 +274,71 @@
     "sha256": "B883DB38F0D615749C70785AA6C8F272AC6668FF434DBE31A20028EDCD67C3FC",
     "portableSha256": "8603A54A8002474D4D216DEE95193716A63650DA2D0213F8E6DCBAA32555A908",
     "upToDate": false
-  }
+  },
+  "upcomingGames": [
+    {
+      "id": "up-grand-theft-auto-vi",
+      "title": "Grand Theft Auto VI",
+      "platform": "pc",
+      "releaseDate": "2026-11-19",
+      "note": "Rockstar Games — PC sürümü hazırlanıyor",
+      "status": "coming-soon"
+    },
+    {
+      "id": "up-elden-ring-nightreign",
+      "title": "Elden Ring: Nightreign",
+      "platform": "pc",
+      "releaseDate": "2026-10-16",
+      "note": "FromSoftware — co-op action RPG",
+      "status": "coming-soon"
+    },
+    {
+      "id": "up-cyberpunk-2077-phantom-liberty",
+      "title": "Cyberpunk 2077: Phantom Liberty",
+      "platform": "pc",
+      "releaseDate": "2026-09-18",
+      "note": "CD PROJEKT RED — genişleme paketi",
+      "status": "coming-soon"
+    },
+    {
+      "id": "up-gta-san-andreas-definitive-edition",
+      "title": "GTA San Andreas Definitive Edition",
+      "platform": "pc",
+      "releaseDate": "2026-12-11",
+      "note": "Rockstar Games — remaster",
+      "status": "coming-soon"
+    },
+    {
+      "id": "up-the-last-of-us-part-ii-remastered",
+      "title": "The Last of Us Part II Remastered",
+      "platform": "pc",
+      "releaseDate": "2026-10-09",
+      "note": "Naughty Dog — PC sürümü",
+      "status": "coming-soon"
+    },
+    {
+      "id": "up-hollow-knight-silksong",
+      "title": "Hollow Knight: Silksong",
+      "platform": "pc",
+      "releaseDate": "2026-10-24",
+      "note": "Team Cherry — beklenen sürüm",
+      "status": "coming-soon"
+    },
+    {
+      "id": "up-resident-evil-5-remake",
+      "title": "Resident Evil 5 Remake",
+      "platform": "pc",
+      "releaseDate": "2026-11-27",
+      "note": "Capcom — yeniden yapım",
+      "status": "coming-soon"
+    },
+    {
+      "id": "up-wuthering-waves-2-0",
+      "title": "Wuthering Waves 2.0",
+      "platform": "pc",
+      "releaseDate": "2026-10-08",
+      "note": "Kuro Games — ücretsiz güncelleme",
+      "status": "coming-soon"
+    }
+  ]
 }
