@@ -108,19 +108,6 @@
     return Date.now() - t < 30 * 24 * 60 * 60 * 1000;
   }
 
-  function appCta() {
-    var u = (state.catalog && state.catalog.appUpdate && state.catalog.appUpdate.downloadUrl) || null;
-    return '<a class="btn btn-primary btn-lg" href="' + esc(u || "#/indir") + '" target="_blank" rel="noopener">🚀 Oynuo ile Daha Hızlı İndir</a>';
-  }
-
-  function appBanner() {
-    return '<div class="app-promo">' +
-      '<div class="app-promo-icon">⚡</div>' +
-      '<div class="app-promo-text"><strong>İndirme hızın bundan daha fazla 🚀</strong>Oyun dosyalarını site üzerinden tarayıcıda değil, Oynuo uygulamasında çok daha hızlı ve kesintisiz indir.</div>' +
-      '<div class="app-promo-cta">' + appCta() + "</div>" +
-    "</div>";
-  }
-
   function img(url, cls, alt) {
     if (!url) return '<div class="placeholder">🎮</div>';
     return '<img class="' + (cls || "") + '" src="' + esc(url) + '" alt="' + esc(alt || "") + '" loading="lazy" />';
@@ -196,8 +183,6 @@
   }
 
   function renderHomeExtras() {
-    var promo = $("#homePromo");
-    if (promo && state.catalog) promo.innerHTML = appBanner();
     renderHomePlatformGrid();
     var recent = $("#homeRecentGrid");
     if (recent) {
@@ -467,39 +452,33 @@ var version = g.latestVersion ? g.latestVersion.version : (g.version || null);
       ? '<span class="gcard-platform ' + pi.cls + '">' + pi.badge + "</span>"
       : "";
     var developer = g.developer ? g.developer : (g.publisher || "");
-    var fileBadge = a.isExternal ? "🌐 Harici" : a.isInternal ? "🚀 Uygulamada" : "";
-    var urlLabel = a.isInternal ? "Oynuo'da İndir" : (a.isExternal ? (pi ? pi.cta : "Sayfaya Git") : "İndir");
-    var urlIcon = a.isInternal ? "🚀" : (a.isExternal ? (pi ? pi.icon : "🌐") : "⬇");
+    var fileBadge = a.isExternal ? "🌐 Harici" : a.isInternal ? "" : "";
+    var labelPi = a.platformExtra || null;
+    var urlLabel = a.isExternal ? (labelPi && labelPi.cta ? labelPi.cta : "İndir") : "⬇ İndir";
+    var urlIcon = a.isExternal ? (labelPi && labelPi.icon ? labelPi.icon : "⬇") : "⬇";
     if (!pi && a.isExternal && isLinkBroken(file)) {
       urlLabel = "Link Koptu";
       urlIcon = "⚠";
     }
-    var urlTarget = a.isInternal
-      ? ((state.catalog && state.catalog.appUpdate && state.catalog.appUpdate.downloadUrl) || "#/indir")
-      : a.url;
+    var urlTarget = a.url;
     var dateTxt = fmtDate(g.releaseDate || (g.latestVersion && g.latestVersion.releasedAt));
     var metaTop = [
       (dateTxt ? '<span class="gcard-date">📅 ' + dateTxt + "</span>" : ""),
       (size !== "-" ? '<span class="gcard-size2">💾 ' + size + "</span>" : ""),
       (version ? '<span class="gcard-ver2">v' + esc(version) + "</span>" : "")
     ].join("");
+    var badges = [platformBadge, featuredBadge, newBadge, popularBadge].filter(function (x) { return !!x; }).join("");
     return (
       '<article class="gcard">' +
         '<a class="gcard-cover" href="#/oyun/' + g.id + '" aria-label="' + esc(g.title) + '">' +
           coverWithFallback(g) +
-          '<span class="gcard-overlay"></span>' +
-          platformBadge +
-          featuredBadge +
-          newBadge +
-          '<span class="gcard-play">' +
-            '<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M8 5.14v13.72a1 1 0 0 0 1.5.86l11-6.86a1 1 0 0 0 0-1.72l-11-6.86a1 1 0 0 0-1.5.86z"/></svg>' +
-          "</span>" +
         "</a>" +
         '<div class="gcard-body">' +
-          (metaTop ? '<div class="gcard-meta-top">' + metaTop + "</div>" : "") +
+          (badges ? '<div class="gcard-meta gcard-badges">' + badges + "</div>" : "") +
           '<a class="gcard-title" href="#/oyun/' + g.id + '">' + esc(g.title) + "</a>" +
+          (metaTop ? '<div class="gcard-meta-top">' + metaTop + "</div>" : "") +
           (developer ? '<div class="gcard-dev">' + esc(developer) + "</div>" : "") +
-          (fileBadge || popularBadge ? '<div class="gcard-meta">' + (popularBadge ? popularBadge : "") + (fileBadge ? '<span class="gcard-ext">' + fileBadge + "</span>" : "") + brokenBadge(file) + "</div>" : brokenBadge(file) ? '<div class="gcard-meta">' + brokenBadge(file) + "</div>" : "") +
+          (fileBadge || brokenBadge(file) ? '<div class="gcard-meta">' + (fileBadge ? '<span class="gcard-ext">' + fileBadge + "</span>" : "") + brokenBadge(file) + "</div>" : "") +
           '<div class="gcard-actions">' +
             (a.url
               ? '<a class="btn btn-primary btn-sm" href="' + esc(urlTarget) + '" target="_blank" rel="noopener nofollow" data-metric="download:' + g.id + '">' + urlIcon + " " + urlLabel + "</a>"
@@ -652,9 +631,8 @@ var version = g.latestVersion ? g.latestVersion.version : (g.version || null);
         '<a class="btn btn-primary btn-lg btn-block" href="' + esc(a.url) + '" target="_blank" rel="noopener nofollow" data-metric="download:' + g.id + '">🌐 Sayfaya Git</a>' +
         '<span class="dim" style="font-size:.82rem;text-align:center">Oyun tarayıcıda açılır; dosyayı oradan indirebilirsin.</span>';
     } else if (a.isInternal) {
-      var appUrl = (state.catalog && state.catalog.appUpdate && state.catalog.appUpdate.downloadUrl) || "#/indir";
-      actionHtml = appBanner() +
-        '<span class="dim" style="font-size:.82rem;text-align:center">Oynuo uygulamasını kur, oyunu uygulama içinden çok daha hızlı indir ve oyna.</span>';
+      actionHtml = '<a class="btn btn-primary btn-lg btn-block" href="' + esc(a.url) + '" download data-metric="download:' + g.id + '">⬇ İndir</a>' +
+        '<span class="dim" style="font-size:.82rem;text-align:center">Dosyayı indir ve oyunu kur.</span>';
     } else {
       actionHtml = '<a class="btn btn-primary btn-lg btn-block" href="' + esc(a.url) + '" download data-metric="download:' + g.id + '">⬇ İndir</a>' +
         '<span class="dim" style="font-size:.82rem;text-align:center">Dosyayı indir; uygulamada "Oyun Ekle" bölümünden kur.</span>';
@@ -697,7 +675,7 @@ var version = g.latestVersion ? g.latestVersion.version : (g.version || null);
       "</div>" +
       '<div class="detail-head">' +
           (g.bannerUrl && !g.coverUrl ? '<div class="detail-hero-bg"><img src="' + esc(g.bannerUrl) + '" alt="" /></div>' : "") +
-          '<div class="detail-cover-wrap">' + coverWithFallback(g) + (g.isFeatured ? '<span class="gcard-featured">★ Öne Çıkan</span>' : "") + "</div>" +
+          '<div class="detail-cover-wrap">' + coverWithFallback(g) + "</div>" +
           '<div class="detail-titleblock">' +
             '<h1>' + esc(g.title) + "</h1>" +
             (g.developer ? '<div class="detail-dev">' + esc(g.developer) + "</div>" : "") +
