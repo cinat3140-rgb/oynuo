@@ -8,7 +8,7 @@
   <link rel="icon" href="logo.svg" type="image/svg+xml" />
   <link rel="icon" href="favicon.png" type="image/png" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-  <link rel="stylesheet" href="style.css?v=20260929b" />
+  <link rel="stylesheet" href="style.css?v=20260929c" />
 </head>
 <body>
   
@@ -63,6 +63,22 @@
           <p class="hero-meta">Site üzerinden indir veya <span class="dim">Windows uygulamasını kur</span> · <span id="zipSize" class="dim">1.2 MB</span> · <a href="#/katalog" class="dim" data-tab-link="torrent">Torrent</a> · <a href="#/katalog" class="dim" data-tab-link="apk">APK</a></p>
         </div>
       </div>
+
+      <section class="section" id="homePlatformSection">
+        <div class="wrap">
+          <div class="section-head">
+            <h2 class="section-title">Sekme Sekme Oyunlar</h2>
+            <a class="btn btn-ghost btn-sm" href="#/katalog">Tümünü Gör →</a>
+          </div>
+          <nav class="platform-tabs" id="homePlatformTabs" role="tablist" aria-label="Platform seçimi">
+            <button type="button" class="ptab active" data-platform="all" role="tab" aria-selected="true">🗂 Tümü</button>
+            <button type="button" class="ptab" data-platform="pc" role="tab" aria-selected="false">🖥️ PC</button>
+            <button type="button" class="ptab" data-platform="torrent" role="tab" aria-selected="false">🌐 Torrent</button>
+            <button type="button" class="ptab" data-platform="apk" role="tab" aria-selected="false">🤖 APK</button>
+          </nav>
+          <div id="homePlatformGrid" class="grid"><div class="loader"></div></div>
+        </div>
+      </section>
 
       <section class="section" id="recentSection">
         <div class="wrap">
@@ -324,7 +340,7 @@
   <button id="feedbackBtn" class="feedback-fab" title="Geri Bildirim & Hata Bildir">💬</button>
   <button id="toTop" class="to-top" title="Yukarı Dön" aria-label="Yukarı dön">↑</button>
 
-  <script src="app.js?v=20260929b"></script>
+  <script src="app.js?v=20260929c"></script>
   <script>
     (function () {
       var tabs = document.querySelectorAll("#platformTabs .ptab");

@@ -1,7 +1,7 @@
 ﻿(function () {
   "use strict";
 
-  var state = { catalog: null, categoryId: null, platform: "all", error: null, search: "", sort: "default", metricsUrl: null };
+  var state = { catalog: null, categoryId: null, platform: "all", homePlatform: "all", error: null, search: "", sort: "default", metricsUrl: null };
 
   var APP_VERSION = "1.4.4";
 
@@ -150,11 +150,55 @@
     sel.innerHTML = opts;
   }
 
-  /* ---------- Home (Son Eklenenler + Kategoriler) ---------- */
+  /* ---------- Home (Sekme Sekme + Son Eklenenler) ---------- */
+
+  function renderHomePlatformGrid() {
+    var grid = $("#homePlatformGrid");
+    if (!grid) return;
+    if (!state.catalog) return;
+    var p = state.homePlatform || "all";
+    var games = ((state.catalog && state.catalog.games) || [])
+      .filter(function (g) { return p === "all" ? true : ((g.platform || "pc") === p); })
+      .slice()
+      .sort(function (a, b) {
+        var da = a.releaseDate || (a.latestVersion && a.latestVersion.releasedAt) || "";
+        var db = b.releaseDate || (b.latestVersion && b.latestVersion.releasedAt) || "";
+        return db.localeCompare(da);
+      });
+    if (!games.length) {
+      grid.innerHTML = p === "all"
+        ? '<div class="empty">Henüz oyun eklenmedi. İlk oyun çok yakında!</div>'
+        : '<div class="empty">Bu platformda henüz gerçek oyun eklenmedi. Sitemize gelen oyunlar burada görünecek.</div>';
+      return;
+    }
+    grid.innerHTML = games.slice(0, 12).map(card).join("");
+    grid.querySelectorAll(".gcard").forEach(function (el, i) {
+      el.classList.add("gcard-in");
+      if (i < 24) el.style.animationDelay = (i * 40) + "ms";
+    });
+  }
+
+  function bindHomePlatformTabs() {
+    var host = $("#homePlatformTabs");
+    if (!host) return;
+    $$(".ptab", host).forEach(function (b) {
+      b.addEventListener("click", function () {
+        var p = b.getAttribute("data-platform") || "all";
+        state.homePlatform = p;
+        $$(".ptab", host).forEach(function (x) {
+          var on = (x.getAttribute("data-platform") || "all") === p;
+          x.classList.toggle("active", on);
+          x.setAttribute("aria-selected", on ? "true" : "false");
+        });
+        renderHomePlatformGrid();
+      });
+    });
+  }
 
   function renderHomeExtras() {
     var promo = $("#homePromo");
     if (promo && state.catalog) promo.innerHTML = appBanner();
+    renderHomePlatformGrid();
     var recent = $("#homeRecentGrid");
     if (recent) {
       var games = ((state.catalog && state.catalog.games) || []).slice().sort(function (a, b) {
@@ -884,6 +928,7 @@ var version = g.latestVersion ? g.latestVersion.version : (g.version || null);
     try { bindSetupWizard(); } catch (e) {}
     try { bindHomeSearch(); } catch (e) {}
     try { bindNavSearch(); } catch (e) {}
+    try { bindHomePlatformTabs(); } catch (e) {}
     if (state.catalog) {
       renderHomeExtras();
     } else {
