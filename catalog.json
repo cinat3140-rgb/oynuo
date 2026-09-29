@@ -91,63 +91,6 @@
   ],
   "games": [
     {
-      "id": 31,
-      "title": "Admin Test Oyunu",
-      "description": "test aciklama",
-      "developer": "TestDev",
-      "publisher": "",
-      "releaseDate": "2026-09-29T17:40:03.158Z",
-      "categoryId": 1,
-      "genre": "Action",
-      "platform": "pc",
-      "isFeatured": false,
-      "membersOnly": false,
-      "popularity": 0,
-      "stats": {
-        "views": 0,
-        "downloads": 0
-      },
-      "coverUrl": "images/placeholder.png",
-      "bannerUrl": null,
-      "requirements": {
-        "minimum": {},
-        "recommended": {}
-      },
-      "versions": [
-        {
-          "id": 31,
-          "version": "1.0.0",
-          "changelog": "",
-          "releasedAt": "2026-09-29T17:40:03.158Z"
-        }
-      ],
-      "latestVersion": {
-        "id": 31,
-        "version": "1.0.0",
-        "changelog": "",
-        "releasedAt": "2026-09-29T17:40:03.158Z"
-      },
-      "latestFiles": [
-        {
-          "id": 31,
-          "versionId": 31,
-          "source": "external",
-          "kind": "file",
-          "fileName": "Admin Test Oyunu",
-          "fileSize": 262144000,
-          "sha256": "",
-          "executablePath": "",
-          "downloadUrl": "https://example.com/test.zip"
-        }
-      ],
-      "torrent": null,
-      "apk": null,
-      "screenshots": [],
-      "category": "action",
-      "createdAt": "2026-09-29T17:40:03.158Z",
-      "popularityLabel": ""
-    },
-    {
       "id": 30,
       "title": "Grand Theft Auto: Vice City",
       "description": "SteamRIP onceden kurulmus (pre-installed) GTA Vice City surumu. 1986 Miami'sinin neonlu sokaklarinda Tommy Vercetti olarak suc imparatorlugu kur. Kurulum gerektirmez, gta-vc.exe ile dogrudan oyna.",
