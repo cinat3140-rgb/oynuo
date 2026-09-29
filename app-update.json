@@ -1,1 +1,11 @@
-﻿{"updateAvailable":true,"latest":{"version":"1.4.4","notes":"Oynuo markasına geçiş; launcher içi oyun dosyası indirme; açık tema düzeltildi; görüntülenme/indirme sayacı sistemi; portable otomatik güncelleme ve performans iyileştirmeleri.","downloadUrl":"downloads/Oynuo_1.4.4_x64-setup.exe","portableUrl":"downloads/Oynuo_1.4.4_portable.exe","sha256":"85A5147F8F6C9B78334A517CBA17C7CA167FDA0D7726EFF652900A64C0BBE8E2","portableSha256":"5B0FF83ACA0CD79F24AF4FC5D2D7336480561F9BB5C2A9DEE0DC22082CE8AFB2"}}
+{
+  "updateAvailable": true,
+  "latest": {
+    "version": "1.4.5",
+    "notes": "Oynuo PC 1.4.5: sifirdan derlendi ve yayinlandi. Oyun katalogu ve platform sekmeleri (PC / Torrent / APK) guncellendi, kapak gorselleri temizlendi, indirme baglantlari dogrudan calisiyor.",
+    "downloadUrl": "downloads/Oynuo_1.4.5_x64-setup.exe",
+    "portableUrl": "downloads/Oynuo_PC_1.4.5_portable.exe",
+    "sha256": "E3CF7AC95D64FF91E78A3ACE75446A762187D1A92F1FAA9B209B5CED07E58B38",
+    "portableSha256": "306BE36D66ED2068F56F9454AB1AFC4B8E49484CC25C36485C8A4C6F00C72D68"
+  }
+}

@@ -3,7 +3,7 @@
 
   var state = { catalog: null, categoryId: null, platform: "all", homePlatform: "all", error: null, search: "", sort: "default", metricsUrl: null };
 
-  var APP_VERSION = "1.4.4";
+  var APP_VERSION = "1.4.5";
 
   var PLATFORM_TITLES = {
     all: "Oyun Kataloğu",
