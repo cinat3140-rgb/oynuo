@@ -5,6 +5,51 @@
 
   var APP_VERSION = "1.4.4";
 
+  var PLATFORM_TITLES = {
+    all: "Oyun Kataloğu",
+    pc: "PC Oyunları",
+    torrent: "Torrent Oyunları",
+    apk: "Android / APK Oyunları"
+  };
+
+  var PLATFORM_COUNTS = {
+    all: "Tüm platformdaki oyunlar listeleniyor",
+    pc: "PC platformundaki oyunlar listeleniyor",
+    torrent: "Torrent ile indirilebilen oyunlar listeleniyor",
+    apk: "Android cihazlarda kurulabilen oyunlar listeleniyor"
+  };
+
+  var TAB_LABELS = {
+    all: "Oynuo (Ana)",
+    pc: "PC",
+    torrent: "Torrent",
+    apk: "Android / APK"
+  };
+
+  var NEEDED_APPS = {
+    all: null,
+    pc: [
+      { id: "oynuo-pc", platform: "pc", icon: "🖥️", name: "Oynuo PC", desc: "Windows için Oynuo uygulaması. Oyun kataloğuna tek tıkla eriş, indir ve oyna.", file: "downloads/Oynuo_1.4.4_x64-setup.exe", btn: "EXE İndir", size: "1.2 MB", tag: "Önerilen", featured: true },
+      { id: "oynuo-pc-msi", platform: "pc", icon: "🏢", name: "Oynuo PC (MSI)", desc: "Kurumsal dağıtım için Windows Installer paketi.", file: "downloads/Oynuo_1.4.4_x64_en-US.msi", btn: "MSI İndir", size: "1.7 MB", featured: false },
+      { id: "oynuo-pc-portable", platform: "pc", icon: "💾", name: "Oynuo PC (Taşınabilir)", desc: "Kurulum gerektirmez; çift tıkla çalıştır.", file: "downloads/Oynuo_1.4.4_portable.exe", btn: "EXE İndir", size: "3.2 MB", featured: false }
+    ],
+    torrent: [
+      { id: "utorrent", platform: "torrent", icon: "🧲", name: "uTorrent", desc: "Popüler torrent istemcisi. .torrent ve magnet linklerini açar.", href: "https://www.utorrent.com/", btn: "İndir", tag: "Önerilen", featured: true },
+      { id: "qbittorrent", platform: "torrent", icon: "🐇", name: "qBittorrent", desc: "Açık kaynak, reklamsız torrent istemcisi.", href: "https://www.qbittorrent.org/", btn: "İndir", featured: false },
+      { id: "fdm", platform: "torrent", icon: "📥", name: "Free Download Manager", desc: "İndirme yöneticisi; torrent destekli.", href: "https://www.freedownloadmanager.org/", btn: "İndir", featured: false }
+    ],
+    apk: [
+      { id: "oynuo-android", platform: "apk", icon: "🤖", name: "Oynuo Android", desc: "Android için Oynuo uygulaması. Katalogdan oyunları kur ve oyna.", file: "downloads/OynuoAndroid-arm64.apk", btn: "APK İndir (ARM64)", size: "6.8 MB", tag: "Önerilen", featured: true },
+      { id: "oynuo-android-x64", platform: "apk", icon: "📱", name: "Oynuo Android (x86_64)", desc: "Emülatörler ve x86_64 cihazlar için APK.", file: "downloads/OynuoAndroid-x86_64.apk", btn: "APK İndir (x86_64)", size: "7.7 MB", featured: false }
+    ]
+  };
+
+  var PLATFORM_BADGES = {
+    pc: { label: "PC", icon: "🖥" },
+    torrent: { label: "TORRENT", icon: "🧲" },
+    apk: { label: "APK / ANDROID", icon: "🤖" }
+  };
+
   function $(sel, root) { return (root || document).querySelector(sel); }
   function $$(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
 
@@ -425,10 +470,14 @@ var version = g.latestVersion ? g.latestVersion.version : (g.version || null);
   function renderCatalog() {
     var grid = $("#catalogGrid");
     var count = $("#catalogCount");
+    var game = $("#catalogTitle");
+    var selected = state.platform || "all";
     var games = filteredGames();
-    count.textContent = (state.catalog ? state.catalog.games.length : 0) + " oyun listeleniyor";
+    if (game) game.textContent = PLATFORM_TITLES[selected] || PLATFORM_TITLES.all;
+    count.textContent = (state.catalog ? state.catalog.games.length : 0) + " oyun kayıtlı · " + games.length + " gösteriliyor · " + (PLATFORM_COUNTS[selected] || PLATFORM_COUNTS.all);
+    renderAppsStrip(selected);
     if (!games.length) {
-      grid.innerHTML = '<div class="empty">Bu kategoride oyun bulunamadı.</div>';
+      grid.innerHTML = '<div class="empty">Bu platformda henüz oyun eklenmedi. Gerekli uygulamaları yukarıdan indirebilirsin.<br/><a href="#/katalog" data-tab-default="all" style="color:var(--accent)">Tüm oyunlara dön →</a></div>';
       return;
     }
     grid.innerHTML = games.map(card).join("");
@@ -436,6 +485,54 @@ var version = g.latestVersion ? g.latestVersion.version : (g.version || null);
       el.classList.add("gcard-in");
       if (i < 24) el.style.animationDelay = (i * 40) + "ms";
     });
+  }
+
+  function appCardHtml(a) {
+    var tag = a.featured ? '<div class="card-tag">' + esc(a.tag || "Önerilen") + "</div>" : "";
+    var badge = PLATFORM_BADGES[a.platform]
+      ? '<div class="card-plat card-plat-' + esc(a.platform) + '">' + PLATFORM_BADGES[a.platform].icon + " " + esc(PLATFORM_BADGES[a.platform].label) + "</div>"
+      : "";
+    var size = a.size ? '<div class="card-size">' + esc(a.size) + "</div>" : "";
+    var ext = a.href ? ' target="_blank" rel="noopener nofollow" href="' + esc(a.href) + '"' : ' href="' + esc(a.file) + '" download';
+    var cls = a.featured ? "card card-featured" : "card";
+    return '<a class="' + cls + '"' + ext + ">" +
+      tag +
+      badge +
+      '<div class="card-icon">' + a.icon + "</div>" +
+      "<h3>" + esc(a.name) + "</h3>" +
+      "<p>" + esc(a.desc) + "</p>" +
+      size +
+      '<span class="btn ' + (a.featured ? "btn-primary" : "btn-ghost") + '">' + esc(a.btn) + "</span>" +
+    "</a>";
+  }
+
+  function renderAppsStrip(platform) {
+    var host = $("#appsStrip");
+    if (!host) return;
+    var body = "";
+    if (platform === "all") {
+      var order = ["pc", "torrent", "apk"];
+      var groups = order.map(function (p) {
+        var list = NEEDED_APPS[p] || [];
+        if (!list.length) return "";
+        return '<div class="apps-group">' +
+          '<h3 class="apps-group-title">' + (PLATFORM_BADGES[p] ? PLATFORM_BADGES[p].icon + " " : "") + TAB_LABELS[p] + "</h3>" +
+          '<div class="downloads apps-grid">' + list.map(appCardHtml).join("") + "</div>" +
+        "</div>";
+      }).join("");
+      body = groups;
+    } else {
+      var apps = NEEDED_APPS[platform] || [];
+      if (!apps.length) { host.hidden = true; host.innerHTML = ""; return; }
+      body = '<div class="downloads apps-grid">' + apps.map(appCardHtml).join("") + "</div>";
+    }
+    host.hidden = false;
+    host.innerHTML =
+      '<div class="apps-head">' +
+        '<h2 class="apps-title">' + (platform === "all" ? "Gerekli Uygulamalar" : TAB_LABELS[platform] + " — Gerekli Uygulamalar") + "</h2>" +
+        '<p class="apps-sub">' + (platform === "all" ? "PC, Torrent ve Android için önerilen uygulamalar." : "Bu platformda oyunları kurmak ve oynamak için önerilen uygulamalar.") + "</p>" +
+      "</div>" +
+      body;
   }
 
   function renderRequirements(requirements) {
@@ -722,6 +819,7 @@ var version = g.latestVersion ? g.latestVersion.version : (g.version || null);
     },
     applyPlatform: function (v) {
       state.platform = v || "all";
+      syncPlatformTabs(state.platform);
       renderCatalog();
     },
     applySearch: function (v) {
@@ -733,6 +831,36 @@ var version = g.latestVersion ? g.latestVersion.version : (g.version || null);
       renderCatalog();
     }
   };
+
+  function syncPlatformTabs(platform) {
+    var tabs = document.querySelectorAll("#platformTabs .ptab");
+    if (!tabs || !tabs.length) return;
+    for (var i = 0; i < tabs.length; i++) {
+      var b = tabs[i];
+      var on = (b.getAttribute("data-platform") || "all") === (platform || "all");
+      b.classList.toggle("active", on);
+      b.setAttribute("aria-selected", on ? "true" : "false");
+    }
+  }
+
+  document.addEventListener("click", function (e) {
+    var el = e.target && e.target.closest
+      ? (e.target.closest("[data-tab]") || e.target.closest("[data-tab-link]") || e.target.closest("[data-tab-default]"))
+      : null;
+    if (!el) return;
+    e.preventDefault();
+    state.platform = el.hasAttribute("data-tab-default")
+      ? "all"
+      : (el.getAttribute("data-tab") != null ? el.getAttribute("data-tab") : el.getAttribute("data-tab-link"));
+    var sel = $("#platformFilter");
+    if (sel) sel.value = state.platform;
+    state.categoryId = null;
+    var catSel = $("#catFilter");
+    if (catSel) catSel.value = "";
+    syncPlatformTabs(state.platform);
+    location.hash = "#/katalog";
+    if (state.catalog) renderCatalog();
+  });
 
   window.addEventListener("hashchange", route);
   document.addEventListener("DOMContentLoaded", function () {

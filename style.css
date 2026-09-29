@@ -370,6 +370,28 @@ h1, h2, h3, p { margin: 0; }
 .card-size { color: var(--accent); font-size: .82rem; font-weight: 600; }
 .card .btn { align-self: flex-start; margin-top: 4px; }
 
+/* ---------- Apps strip (platform tabs) ---------- */
+.apps-strip { margin-bottom: 26px; }
+.apps-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+.apps-title { font-size: 1.2rem; font-weight: 700; }
+.apps-sub { color: var(--text-dim); font-size: .85rem; }
+.apps-grid { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; }
+.apps-grid .card { padding: 20px 18px; }
+.apps-grid .card-icon { font-size: 1.7rem; }
+.apps-grid .card p { min-height: 0; }
+
+/* Platform badge on app cards */
+.card-plat { position: absolute; top: -11px; right: 18px; font-size: .66rem; font-weight: 700; letter-spacing: .4px; padding: 3px 10px; border-radius: 999px; color: #111; }
+.card-plat-pc { background: #7aa2ff; }
+.card-plat-torrent { background: #9e86ff; }
+.card-plat-apk { background: #3ddc84; }
+[data-theme="light"] .card-plat { color: #111; }
+
+/* Grouped apps on the main tab */
+.apps-group { margin-bottom: 24px; }
+.apps-group-title { display: flex; align-items: center; gap: 6px; font-size: .92rem; font-weight: 700; letter-spacing: .3px; text-transform: uppercase; color: var(--text); margin-bottom: 12px; }
+.apps-group-title::after { content: ""; flex: 1; height: 1px; background: var(--border); margin-left: 10px; }
+
 /* ---------- Steps / FAQ ---------- */
 .steps { list-style: none; padding: 0; display: grid; gap: 14px; counter-reset: step; }
 .steps li { background: var(--bg-soft); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 22px; }
