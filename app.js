@@ -440,7 +440,8 @@ function actionButtons(g, sizeClass) {
     var a = primaryAction(g);
     var cat = categoryName(g.categoryId);
     var file = Array.isArray(g.latestFiles) && g.latestFiles.length ? g.latestFiles[0] : null;
-    var size = file ? fmtBytes(file.fileSize) : "-";
+    var sizeFile = (Array.isArray(g.latestFiles) ? g.latestFiles : []).filter(function (f) { return f && f.fileSize > 0; })[0] || null;
+    var size = sizeFile ? fmtBytes(sizeFile.fileSize) : "-";
 var version = g.latestVersion ? g.latestVersion.version : (g.version || null);
     var featuredBadge = g.isFeatured ? '<span class="gcard-featured">★ Öne Çıkan</span>' : "";
     var newBadge = isNewGame(g) ? '<span class="gcard-new">✨ YENİ</span>' : "";
@@ -452,9 +453,9 @@ var version = g.latestVersion ? g.latestVersion.version : (g.version || null);
       ? '<span class="gcard-platform ' + pi.cls + '">' + pi.badge + "</span>"
       : "";
     var developer = g.developer ? g.developer : (g.publisher || "");
-    var fileBadge = a.isExternal ? "🌐 Harici" : a.isInternal ? "" : "";
+    var fileBadge = "";
     var labelPi = a.platformExtra || null;
-    var urlLabel = a.isExternal ? (labelPi && labelPi.cta ? labelPi.cta : "İndir") : "⬇ İndir";
+    var urlLabel = a.isExternal ? (labelPi && labelPi.cta ? labelPi.cta : "İndir") : "İndir";
     var urlIcon = a.isExternal ? (labelPi && labelPi.icon ? labelPi.icon : "⬇") : "⬇";
     if (!pi && a.isExternal && isLinkBroken(file)) {
       urlLabel = "Link Koptu";
