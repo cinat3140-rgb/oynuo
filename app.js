@@ -182,7 +182,35 @@
     });
   }
 
+  function renderUpcoming() {
+    var grid = $("#homeUpcomingGrid");
+    var list = (state.catalog && state.catalog.upcomingGames) || [];
+    if (!grid) return;
+    if (!list.length) { grid.innerHTML = '<div class="empty">Yakında duyurulacak oyun yok.</div>'; return; }
+    var today = new Date().toISOString().slice(0, 10);
+    var sorted = list.slice().sort(function (a, b) { return String(a.releaseDate || "").localeCompare(String(b.releaseDate || "")); });
+    grid.innerHTML = sorted.map(function (u) {
+      var rel = "<strong>Yakında</strong>";
+      if (u.releaseDate) {
+        var diff = Math.round((new Date(u.releaseDate + "T00:00:00Z").getTime() - new Date(today + "T00:00:00Z").getTime()) / 86400000);
+        if (diff === 0) rel = "<strong>Bugün</strong>";
+        else if (diff > 0 && diff <= 60) rel = "<strong>" + diff + " gün kaldı</strong>";
+      }
+      return '<article class="gcard gcard-soon">' +
+        '<div class="gcard-cover gcard-cover-soon"><span class="soon-mark">🕐</span><span class="soon-label">Yakında</span></div>' +
+        '<div class="gcard-body">' +
+          '<div class="gcard-meta gcard-badges"><span class="gcard-platform badge-pc">' + esc((u.platform || "pc").toUpperCase()) + '</span></div>' +
+          '<div class="gcard-title">' + esc(u.title) + "</div>" +
+          '<div class="gcard-meta-top"><span class="gcard-date">📅 ' + esc(fmtDate(u.releaseDate)) + '</span><span class="soon-rel">' + rel + "</span></div>" +
+          (u.note ? '<div class="gcard-dev">' + esc(u.note) + "</div>" : "") +
+          '<div class="gcard-actions"><span class="btn btn-ghost btn-sm" style="cursor:default;opacity:.75">Yakında</span></div>' +
+        "</div>" +
+      "</article>";
+    }).join("");
+  }
+
   function renderHomeExtras() {
+    renderUpcoming();
     renderHomePlatformGrid();
     var recent = $("#homeRecentGrid");
     if (recent) {

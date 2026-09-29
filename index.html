@@ -8,7 +8,7 @@
   <link rel="icon" href="logo.svg" type="image/svg+xml" />
   <link rel="icon" href="favicon.png" type="image/png" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-  <link rel="stylesheet" href="style.css?v=20260929h" />
+  <link rel="stylesheet" href="style.css?v=20260929i" />
 </head>
 <body>
   
@@ -77,6 +77,17 @@
             <button type="button" class="ptab" data-platform="apk" role="tab" aria-selected="false">🤖 APK</button>
           </nav>
           <div id="homePlatformGrid" class="grid"><div class="loader"></div></div>
+        </div>
+      </section>
+
+      <section class="section" id="homeUpcomingSection">
+        <div class="wrap">
+          <div class="section-head">
+            <h2 class="section-title">🕐 Yakında</h2>
+            <a class="section-more" href="#/katalog">Tümünü Gör →</a>
+          </div>
+          <p class="dim" style="margin:-4px 0 14px">Yakında yayınlanacak oyunlar. Oyun çıktığında buradan kalkar ve Katalog sekmesine düşer.</p>
+          <div class="grid" id="homeUpcomingGrid"></div>
         </div>
       </section>
 
@@ -429,7 +440,7 @@
   <button id="feedbackBtn" class="feedback-fab" title="Geri Bildirim & Hata Bildir">💬</button>
   <button id="toTop" class="to-top" title="Yukarı Dön" aria-label="Yukarı dön">↑</button>
 
-  <script src="app.js?v=20260929h"></script>
+  <script src="app.js?v=20260929i"></script>
   <script>
     (function () {
       var tabs = document.querySelectorAll("#platformTabs .ptab");

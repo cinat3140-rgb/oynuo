@@ -565,3 +565,20 @@ h1, h2, h3, p { margin: 0; }
 .ptab.active{background:var(--primary);border-color:var(--primary);color:#111;box-shadow:0 4px 14px rgba(150,150,150,.35)}[data-theme="light"] .ptab.active{color:#fff}
 .ptab:active{transform:scale(.97)}
 @media(max-width:640px){.ptab{padding:7px 12px;font-size:.8rem}}
+/* ---------- Yakinda (coming soon) kartlari ---------- */
+.gcard-soon { opacity: .92; }
+.gcard-soon .gcard-title { cursor: default; }
+.gcard-cover-soon {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+  background: linear-gradient(150deg, var(--bg-raised), var(--bg));
+  border: 1px dashed var(--border); cursor: default;
+}
+.gcard-cover-soon .soon-mark { font-size: 2.4rem; opacity: .55; }
+.soon-label {
+  font-size: .68rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+  background: linear-gradient(135deg, var(--primary), var(--accent)); color: #fff;
+  padding: 4px 12px; border-radius: 999px;
+}
+[data-theme="light"] .soon-label { color: #fff; }
+.soon-rel { color: var(--accent); font-weight: 700; white-space: nowrap; }
+.gcard-soon:hover { transform: none; }

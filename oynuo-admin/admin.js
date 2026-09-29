@@ -39,6 +39,7 @@ function readCatalog() {
   let d; try { d = JSON.parse(fs.readFileSync(CATALOG, "utf8")); } catch (e) { fail("catalog.json okunamadi: " + e.message); }
   if (!d.categories || !Array.isArray(d.categories)) fail("categories yok");
   if (!Array.isArray(d.games)) d.games = [];
+  if (!Array.isArray(d.upcomingGames)) d.upcomingGames = [];
   return d;
 }
 
@@ -201,6 +202,12 @@ function listGames(cat) {
     const link = g.platform === "torrent" ? (g.torrent && (g.torrent.magnetUrl || g.torrent.torrentUrl)) : g.platform === "apk" ? (g.apk && g.apk.url) : (g.latestFiles && g.latestFiles.length ? g.latestFiles[0].downloadUrl : "");
     console.log("  " + CLR.cyan + String(g.id).padEnd(4) + CLR.reset + CLR.bold + (g.title || "?") + CLR.reset + CLR.dim + " [" + badge + "]" + (link ? "\n       " + link : "") + CLR.reset);
   });
+  if (Array.isArray(cat.upcomingGames) && cat.upcomingGames.length) {
+    console.log("\n" + CLR.bold + "  YAKINDA (" + cat.upcomingGames.length + ")" + CLR.reset);
+    cat.upcomingGames.forEach(u => {
+      console.log("  " + CLR.yellow + "○ " + CLR.reset + CLR.bold + (u.title || "?") + CLR.reset + CLR.dim + " [" + (u.platform || "pc") + "]" + (u.releaseDate ? " — " + u.releaseDate : "") + CLR.reset);
+    });
+  }
 }
 
 function cliFlags(args) {
@@ -267,7 +274,9 @@ async function cmdInteractive() {
     const cat = readCatalog();
     const menu = [
       { key: "add", label: "Yeni oyun ekle" },
-      { key: "list", label: "Oyunlari listele" },
+      { key: "list", label: "Oyunlari listele (oyunlar + yakinda)" },
+      { key: "soon", label: "Yakinda cikacak oyun ekle" },
+      { key: "soonlist", label: "Yakinda listesini duzenle" },
       { key: "push", label: "Catalog-ist degil: yalnizca degisiklikleri push et" },
       { key: "quit", label: "Cikis" }
     ];
@@ -275,6 +284,37 @@ async function cmdInteractive() {
       const sel = await choose(rl, "Ne yapmak istersin?", menu);
       if (sel.key === "quit") { console.log(CLR.dim + "  gorusteruz!" + CLR.reset); break; }
       if (sel.key === "list") { listGames(cat); continue; }
+      if (sel.key === "soon") {
+        const st = await ask(rl, "  Oyun adi: ");
+        if (!st) { console.log(CLR.yellow + "  ad zorunlu, atlaniyor" + CLR.reset); continue; }
+        const splat = await choose(rl, "Platform", PLATFORM_CHOICES);
+        const rel = await ask(rl, "  Cikis tarihi (YYYY-MM-DD, bos olabilir): ");
+        const note = await ask(rl, "  Kisa not (opsiyonel): ");
+        cat.upcomingGames.push({
+          id: "up-" + st.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
+          title: st,
+          platform: splat.key,
+          releaseDate: /^\d{4}-\d{2}-\d{2}$/.test(rel) ? rel : (rel || null),
+          note: note || null,
+          status: "coming-soon"
+        });
+        const sp = (await ask(rl, "  GitHub'a push edilsin mi? (e)=evet: ")).toLowerCase() === "e";
+        saveAndPush(cat, sp, "Yakinda oyun eklendi: " + st + " (admin aracı)");
+        continue;
+      }
+      if (sel.key === "soonlist") {
+        if (!cat.upcomingGames.length) { console.log(CLR.dim + "  yakinda listesi bos" + CLR.reset); continue; }
+        cat.upcomingGames.forEach((u, i) => console.log("  " + CLR.cyan + String(i + 1) + CLR.reset + ") " + u.title + CLR.dim + " [" + u.platform + "]" + CLR.reset));
+        const rm = await ask(rl, "  silinecek sira no (bos = silme): ");
+        const idx = parseInt(rm, 10);
+        if (idx >= 1 && idx <= cat.upcomingGames.length) {
+          const gone = cat.upcomingGames.splice(idx - 1, 1)[0];
+          console.log(CLR.green + "  silindi: " + gone.title + CLR.reset);
+          const sp = (await ask(rl, "  GitHub'a push edilsin mi? (e)=evet: ")).toLowerCase() === "e";
+          saveAndPush(cat, sp, "Yakinda oyun silindi: " + gone.title + " (admin aracı)");
+        }
+        continue;
+      }
       if (sel.key === "push") { try { execSync("git push origin main", { cwd: ROOT, stdio: "inherit" }); console.log(CLR.green + "  push ok" + CLR.reset); } catch (e) { console.log(CLR.red + "  push basarisiz: " + e.message + CLR.reset); } continue; }
 
       const title = await ask(rl, "  Oyun adi: ");
@@ -323,5 +363,24 @@ async function cmdInteractive() {
   const cmd = (args.find(a => !a.startsWith("--")) || "");
   const flags = cliFlags(process.argv);
   if (cmd && cmd.toLowerCase() === "add") { await cmdAdd(flags); return; }
+  if (cmd && cmd.toLowerCase() === "soon") {
+    const cat = readCatalog();
+    const title = flags.title || flags.t || "";
+    if (!title) fail("Oyun adi zorunlu: --title \"Grand Theft Auto VI\"");
+    const plat = (flags.platform || flags.p || "pc").toLowerCase();
+    const pl = PLATFORM_CHOICES.find(x => x.key === plat) || PLATFORM_CHOICES[0];
+    const rel = flags.date || "";
+    cat.upcomingGames.push({
+      id: "up-" + title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
+      title, platform: pl.key,
+      releaseDate: /^\d{4}-\d{2}-\d{2}$/.test(rel) ? rel : (rel || null),
+      note: flags.note || null,
+      status: "coming-soon"
+    });
+    const noPush = flags["no-push"] === "1";
+    saveAndPush(cat, !noPush, "Yakinda oyun eklendi: " + title + " (admin aracı)");
+    console.log(CLR.green + "  yakinda listesi: " + cat.upcomingGames.length + " oyun" + CLR.reset);
+    return;
+  }
   await cmdInteractive();
 })().catch(e => { console.error(e); process.exit(1); });
