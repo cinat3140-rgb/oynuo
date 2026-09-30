@@ -277,14 +277,6 @@
   },
   "upcomingGames": [
     {
-      "id": "up-cyberpunk-2077-phantom-liberty",
-      "title": "Cyberpunk 2077: Phantom Liberty",
-      "platform": "pc",
-      "releaseDate": "2026-09-18",
-      "note": "CD PROJEKT RED — genişleme paketi",
-      "status": "coming-soon"
-    },
-    {
       "id": "up-gta-san-andreas-definitive-edition",
       "title": "GTA San Andreas Definitive Edition",
       "platform": "pc",
