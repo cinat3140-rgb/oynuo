@@ -181,29 +181,26 @@ function build(cat, o) {
 }
 
 /* ---------------- gorunum ---------------- */
-function gameRow(cat, g, maxTitle = 30) {
+function gameRow(cat, g, maxTitle = 24) {
   const lk = gameLink(g);
   const st = g.stats || {};
   let t = g.title || "?";
-  if (t.length > maxTitle) t = t.slice(0, maxTitle - 1) + "…";
+  if (t.length > maxTitle) t = t.slice(0, maxTitle - 1) + "~";
   const bits = [];
   bits.push(catName(cat, g.categoryId));
   bits.push((g.platform || "pc").toUpperCase());
-  if (g.isFeatured) bits.push("★");
+  if (g.isFeatured) bits.push("*");
   const size = sizeOf(cat, g);
   if (size) bits.push(size);
-  bits.push("👁" + (st.views || 0));
-  bits.push("⬇" + (st.downloads || 0));
-  return (
-    U.B(U.TX(t.padEnd(maxTitle))) + "  " + U.DM(bits.join(" · ")) +
-    (lk ? "" : "  " + U.c(U.T.warn, "[bağlantı yok]"))
-  );
+  bits.push("v" + (st.views || 0));
+  bits.push("d" + (st.downloads || 0));
+  const right = lk ? U.DM(bits.join(" ")) : U.DM(bits.join(" ")) + " " + U.c(U.T.warn, "[link yok]");
+  const gap = Math.max(1, 52 - U.width(t) - U.width(right));
+  return U.B(U.TX(t)) + " ".repeat(gap) + right;
 }
 
 function showDetail(cat, g) {
-  U.clear();
-  console.log("");
-  console.log("  " + U.A("╔" + "═".repeat(66) + "╗"));
+  U.screen("OYUN DETAYI", g.title ? U.trunc(g.title, 42) : "OYUN");
   const rows = [
     ["Oyun adı", g.title],
     ["ID", String(g.id)],
@@ -222,11 +219,12 @@ function showDetail(cat, g) {
     ["Açıklama", (g.description || "—").slice(0, 46)],
     ["Eklenme", (g.createdAt || "").slice(0, 10)]
   ];
+  console.log("  " + U.BX("+" + "-".repeat(64) + "+"));
   for (const [k, v] of rows) {
-    const val = String(v == null ? "—" : v);
-    console.log("  " + U.A("║") + " " + U.D(U.pad(k, 14)) + " " + U.pad(val, 48) + U.A(" ║"));
+    const val = String(v == null ? "-" : v);
+    console.log("  " + U.BX("|") + " " + U.D(U.pad(k, 14)) + " " + U.TX(U.pad(U.trunc(val, 44), 44)) + " " + U.BX("|"));
   }
-  console.log("  " + U.A("╚" + "═".repeat(66) + "╝"));
+  console.log("  " + U.BX("+" + "-".repeat(64) + "+"));
   console.log("");
   console.log("  " + U.D(url(g.id)));
 }
@@ -249,11 +247,7 @@ function liveCheck() {
 
 /* ---------------- ekranlar ---------------- */
 async function screenList(cat) {
-  U.clear();
-  console.log("");
-  console.log(U.banner(cat.games.length + " OYUN  ·  " + cat.upcomingGames.length + " YAKINDA"));
-  console.log("");
-  U.head("OYUNLAR");
+  U.screen(cat.games.length + " OYUN  |  " + cat.upcomingGames.length + " YAKINDA", "OYUNLAR");
   const sorted = cat.games.slice().sort((a, b) => b.id - a.id);
   if (!sorted.length) U.info("henüz oyun yok");
   sorted.forEach(g => {
@@ -265,7 +259,7 @@ async function screenList(cat) {
     cat.upcomingGames.forEach(u => {
       const n = daysLeft(u.releaseDate);
       const rel = n == null ? U.D("—") : n < 0 ? U.c(U.T.err, "çıktı") : n === 0 ? U.c(U.T.warn, "bugün") : U.c(T_OK, n + " gün");
-      console.log("  " + U.c(U.T.warn, "○") + " " + U.B(U.TX(String(u.title).padEnd(34))) + "  " + U.D((u.platform || "").toUpperCase().padEnd(8)) + rel);
+      console.log("  " + U.c(U.T.warn, ".") + " " + U.B(U.TX(String(u.title).padEnd(34))) + "  " + U.D((u.platform || "").toUpperCase().padEnd(8)) + rel);
     });
   }
   console.log("");
@@ -273,10 +267,7 @@ async function screenList(cat) {
 }
 
 async function screenLive() {
-  U.clear();
-  console.log("");
-  console.log(U.banner("CANLI KONTROL"));
-  console.log("");
+  U.screen("CANLI KONTROL");
   U.head("SİTE DURUMU");
   console.log("  " + U.D("adres   ") + SITE);
   const r = await liveCheck();
@@ -293,10 +284,7 @@ async function screenLive() {
 }
 
 async function screenSign() {
-  U.clear();
-  console.log("");
-  console.log(U.banner("İMZA DURUMU"));
-  console.log("");
+  U.screen("İMZA DURUMU");
   try { execSync('node "' + path.join(__dirname, "sign.js") + '"', { stdio: "inherit" }); } catch {}
   console.log("");
   await pause();
@@ -304,11 +292,7 @@ async function screenSign() {
 
 async function screenSettings() {
   for (;;) {
-    U.clear();
-    console.log("");
-    console.log(U.banner("AYARLAR"));
-    console.log("");
-    U.head("TERCİHLER");
+    U.screen("KISISELLESTIRME", "TERCIHLER");
     const items = [
       { k: "theme", label: "Tema: " + U.CFG.theme + U.D("  (" + U.THEMES[U.CFG.theme].desc + ")") },
       { k: "banner", label: "Banner metni: " + U.B(U.CFG.banner) },
@@ -321,10 +305,7 @@ async function screenSettings() {
     if (!sel || sel.k === "back") return;
 
     if (sel.k === "theme") {
-      U.clear();
-      console.log("");
-      console.log(U.banner("TEMA SEÇ"));
-      console.log("");
+      U.screen("GORSEL AYARLARI", "TEMA SEC (ok tuslariyla)");
       const keys = U.THEME_KEYS.map(k => ({ k, label: U.themePreview(k) }));
       const t = await U.selectList(rl, keys, { render: x => x.label, page: 6 });
       if (t) { U.setTheme(t.k); U.refreshTheme(); U.ok("tema: " + t.k); await pause(); }
@@ -345,13 +326,13 @@ async function screenSettings() {
 /* ---------------- oyun silme (ok tusu) ---------------- */
 async function screenRemove(cat) {
   if (!cat.games.length) { U.warn("silinecek oyun yok"); return; }
-  U.clear();
-  console.log("");
-  console.log(U.banner("OYUN SİL"));
-  console.log("");
-  U.head("SİLİNECEK OYUNU SEÇ");
   const sorted = cat.games.slice().sort((a, b) => a.id - b.id);
-  const g = await U.selectList(rl, sorted, { render: x => gameRow(cat, x, 28), page: 12 });
+  const g = await U.selectList(rl, sorted, {
+    render: x => gameRow(cat, x, 28),
+    page: 12,
+    title: "OYUN SILME  -  silinecek oyunu sec",
+    hint: "↑/↓ hareket  •  Enter sec  •  Esc iptal  •  rakam: dogrudan sec"
+  });
   if (!g) { U.info("iptal edildi"); return; }
 
   showDetail(cat, g);
@@ -370,12 +351,8 @@ async function screenRemove(cat) {
 /* ---------------- yakinda silme ---------------- */
 async function screenSoonRemove(cat) {
   if (!cat.upcomingGames.length) { U.warn("yakında listesi boş"); return; }
-  U.clear();
-  console.log("");
-  console.log(U.banner("YAKINDA SİL"));
-  console.log("");
-  U.head("SİLİNECEK YAKINDA OYUNU SEÇ");
   const g = await U.selectList(rl, cat.upcomingGames, {
+    title: "YAKINDA LISTESINDEN SIL",
     render: x => {
       const n = daysLeft(x.releaseDate);
       const rel = n == null ? U.D("—") : n < 0 ? U.c(U.T.err, "çıktı") : n === 0 ? U.c(U.T.warn, "bugün") : U.c(T_OK, n + " gün");
@@ -390,12 +367,9 @@ async function screenSoonRemove(cat) {
 
 /* ---------------- oyun ekleme ---------------- */
 async function screenAdd(cat) {
-  U.clear();
-  console.log("");
-  console.log(U.banner("YENİ OYUN EKLE"));
-  console.log("");
+  U.screen("YENİ OYUN EKLE");
   U.askQ("Oyun adı:");
-  const title = await ask("  " + U.A("▸ "));
+  const title = await ask("  " + U.A("> "));
   if (!title) { U.warn("ad zorunlu"); return; }
 
   U.askQ("Platform:");
@@ -411,24 +385,24 @@ async function screenAdd(cat) {
   const category = cs.c;
 
   U.askQ(plat.badge + " bağlantısı (boş = oyun 'yakında' görünür):");
-  let link = await ask("  " + U.A("▸ "));
+  let link = await ask("  " + U.A("> "));
   if (link && plat.key !== "torrent" && !isUrl(link)) { U.warn("geçerli http(s) linki olmalı"); link = ""; }
   if (link && plat.key === "torrent" && !/^(magnet:|https?:)/i.test(link)) { U.warn("magnet: ile başlamalı"); link = ""; }
 
   U.askQ("Kapak görseli (dosya yolu veya URL — boş olabilir):");
-  const cover = await ask("  " + U.A("▸ "));
+  const cover = await ask("  " + U.A("> "));
   U.askQ("Geliştirici (opsiyonel):");
-  const developer = await ask("  " + U.A("▸ "));
+  const developer = await ask("  " + U.A("> "));
   U.askQ("Yayıncı (opsiyonel):");
-  const publisher = await ask("  " + U.A("▸ "));
+  const publisher = await ask("  " + U.A("> "));
   U.askQ("Tür (opsiyonel, ör. Action):");
-  const genre = await ask("  " + U.A("▸ "));
+  const genre = await ask("  " + U.A("> "));
   U.askQ("Boyut (opsiyonel, ör. 250 MB / 2 GB):");
-  const size = await ask("  " + U.A("▸ "));
+  const size = await ask("  " + U.A("> "));
   U.askQ("Sürüm (Enter = 1.0.0):");
-  const version = (await ask("  " + U.A("▸ "))) || "1.0.0";
+  const version = (await ask("  " + U.A("> "))) || "1.0.0";
   U.askQ("Açıklama (opsiyonel):");
-  const description = await ask("  " + U.A("▸ "));
+  const description = await ask("  " + U.A("> "));
   const featured = await confirm("Öne çıkan olsun mu?");
 
   const g = build(cat, {
@@ -438,10 +412,7 @@ async function screenAdd(cat) {
     sizeBytes: parseSize(size)
   });
 
-  U.clear();
-  console.log("");
-  console.log(U.banner("ÖNİZLEME"));
-  console.log("");
+  U.screen("ÖNİZLEME");
   showDetail(cat, g);
   if (!await confirm("Kaydedip GitHub'a gönderilsin mi?")) { U.warn("vazgeçildi — katalog değiştirilmedi geri alınacak"); cat.games.pop(); return; }
   await push(cat, "Oyun eklendi: " + g.title + " [" + plat.badge + "] (admin aracı)", true);
@@ -452,21 +423,18 @@ async function screenAdd(cat) {
 }
 
 async function screenSoonAdd(cat) {
-  U.clear();
-  console.log("");
-  console.log(U.banner("YAKINDA OYUN EKLE"));
-  console.log("");
+  U.screen("YAKINDA OYUN EKLE");
   U.askQ("Oyun adı:");
-  const title = await ask("  " + U.A("▸ "));
+  const title = await ask("  " + U.A("> "));
   if (!title) { U.warn("ad zorunlu"); return; }
   U.askQ("Platform:");
   const keys = PLATFORMS.map(p => ({ k: p.key, label: p.label, p }));
   const pk = await U.selectList(rl, keys, { render: x => x.label, page: 3, hint: "↑/↓  •  Enter seç" });
   if (!pk) return;
   U.askQ("Çıkış tarihi (YYYY-AA-GG, boş olabilir):");
-  const rel = await ask("  " + U.A("▸ "));
+  const rel = await ask("  " + U.A("> "));
   U.askQ("Kısa not (opsiyonel):");
-  const note = await ask("  " + U.A("▸ "));
+  const note = await ask("  " + U.A("> "));
 
   cat.upcomingGames.push({
     id: "up-" + slug(title), title, platform: pk.p.key,
@@ -481,24 +449,27 @@ async function screenSoonAdd(cat) {
 async function menu() {
   await U.boot();
   const cat = read();
+  U.info("Oynuo Admin Konsolu v2.0 - hazir"); U.info("");
   for (;;) {
-    U.clear();
-    console.log("");
-    console.log(U.banner(cat.games.length + " OYUN  ·  " + cat.upcomingGames.length + " YAKINDA  ·  " + U.CFG.theme.toUpperCase()));
     const items = [
-      { k: "add", label: U.c(U.T.ok, "➕") + "  Yeni oyun ekle" },
-      { k: "soonadd", label: U.c(U.T.accent, "🕐") + "  Yakında çıkacak oyun ekle" },
-      { k: "list", label: U.c(U.T.accent, "📋") + "  Oyunları görüntüle" },
-      { k: "rm", label: U.c(U.T.warn, "🗑️") + "  Oyun sil  " + U.D("(ok tuşlarıyla seç)") },
-      { k: "soonrm", label: U.c(U.T.warn, "✂️") + "  Yakında listesinden sil" },
-      { k: "live", label: U.c(U.T.accent, "🌐") + "  Canlı siteyi kontrol et" },
-      { k: "sign", label: U.c(U.T.accent, "🔐") + "  İmza (sertifika) durumu" },
-      { k: "push", label: U.c(U.T.ok, "🚀") + "  Değişiklikleri gönder" },
-      { k: "set", label: U.c(U.T.box, "⚙️") + "  Ayarlar  " + U.D("(tema, banner, saat)") },
-      { k: "quit", label: U.c(U.T.err, "🚪") + "  Çıkış" }
+      { k: "add", label: U.c(U.T.ok, "+") + "  Yeni oyun ekle" },
+      { k: "soonadd", label: U.c(U.T.accent, "*") + "  Yakında çıkacak oyun ekle" },
+      { k: "list", label: U.c(U.T.accent, ">") + "  Oyunları görüntüle" },
+      { k: "rm", label: U.c(U.T.warn, "x") + "  Oyun sil  " + U.D("(ok tuşlarıyla seç)") },
+      { k: "soonrm", label: U.c(U.T.warn, "x") + "  Yakında listesinden sil" },
+      { k: "live", label: U.c(U.T.accent, "o") + "  Canlı siteyi kontrol et" },
+      { k: "sign", label: U.c(U.T.accent, "#") + "  İmza (sertifika) durumu" },
+      { k: "push", label: U.c(U.T.ok, "^") + "  Değişiklikleri gönder" },
+      { k: "set", label: U.c(U.T.box, "@") + "  Ayarlar  " + U.D("(tema, banner, saat)") },
+      { k: "quit", label: U.c(U.T.err, "q") + "  Çıkış" }
     ];
-    const sel = await U.selectList(rl, items, { render: x => x.label, page: 10, hint: "↑/↓ hareket  •  Enter seç  •  Esc çıkış" });
-    if (!sel || sel.k === "quit") { console.log("\n  " + U.c(U.T.ok, "Görüşürüz! 👋") + "\n"); break; }
+    const sel = await U.selectList(rl, items, {
+      render: x => x.label,
+      page: 10,
+      title: "ANA MENU   |   " + cat.games.length + " oyun   |   " + cat.upcomingGames.length + " yakında   |   tema: " + U.CFG.theme,
+      hint: "↑/↓ hareket  •  Enter sec  •  Esc cikis  •  rakam: dogrudan sec"
+    });
+    if (!sel || sel.k === "quit") { U.clear(); console.log("\n  " + U.c(U.T.ok, "Gorusuruz!") + "\n"); break; }
 
     if (sel.k === "add") await screenAdd(cat);
     else if (sel.k === "soonadd") await screenSoonAdd(cat);
@@ -508,7 +479,7 @@ async function menu() {
     else if (sel.k === "live") await screenLive();
     else if (sel.k === "sign") await screenSign();
     else if (sel.k === "set") await screenSettings();
-    else if (sel.k === "push") { U.clear(); console.log(""); await push(cat, "Manuel gönderim (admin aracı)", true); await pause(); }
+    else if (sel.k === "push") { U.screen("MANUEL GONDERIM", "GIT COMMIT + PUSH"); await push(cat, "Manuel gonderim (admin araci)", true); await pause(); }
   }
 }
 
