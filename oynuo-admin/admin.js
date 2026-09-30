@@ -15,8 +15,6 @@ const CATALOG = path.join(ROOT, "catalog.json");
 const SITE = "https://cinat3140-rgb.github.io/oynuo";
 const LAUNCHER_CATALOG = "C:/Users/PC/OneDrive/Belgeler/Default Project/GameLauncher/launcher/public/catalog.json";
 const LAUNCHER_ROOT = "C:/Users/PC/OneDrive/Belgeler/Default Project/GameLauncher/launcher";
-const LAUNCHER_CATALOG = "C:/Users/PC/OneDrive/Belgeler/Default Project/GameLauncher/launcher/public/catalog.json";
-const LAUNCHER_ROOT = "C:/Users/PC/OneDrive/Belgeler/Default Project/GameLauncher/launcher";
 const PLATFORMS = [
   { key: "pc", label: "PC (Windows) - indirme linki", badge: "PC" },
   { key: "torrent", label: "Torrent - magnet / .torrent", badge: "TORRENT" },
@@ -110,43 +108,9 @@ function syncLauncherCatalog(cat) {
   }
 }
 
-function syncLauncherCatalog(cat) {
-  // PC uygulamasinin gomulu katalogunu oynuo ile ayni yap
-  try {
-    if (!fs.existsSync(LAUNCHER_ROOT)) return null;
-    const merged = JSON.parse(JSON.stringify(cat));
-    // backend sayaclarini tazele
-    try {
-      const Database = require("C:/Users/PC/OneDrive/Belgeler/Default Project/GameLauncher/backend/node_modules/better-sqlite3");
-      const db = new Database("C:/Users/PC/OneDrive/Belgeler/Default Project/GameLauncher/backend/data/app.sqlite", { readonly: true });
-      const m = {};
-      db.prepare("SELECT id, view_count, download_count FROM games").all().forEach(r => { m[String(r.id)] = { views: r.view_count || 0, downloads: r.download_count || 0 }; });
-      db.close();
-      merged.games.forEach(g => { const x = m[String(g.id)]; g.stats = x ? { views: x.views, downloads: x.downloads } : { views: 0, downloads: 0 }; });
-      merged.metricsUrl = "http://127.0.0.1:3001/api/metrics";
-    } catch {}
-    fs.writeFileSync(LAUNCHER_CATALOG, JSON.stringify(merged, null, 2) + "\n", "utf8");
-
-    // kapaklari kopyala (yeni oyunlar icin)
-    merged.games.forEach(g => {
-      if (!g.coverUrl || g.coverUrl.includes("placeholder")) return;
-      const src = path.join(ROOT, g.coverUrl);
-      const dest = path.join(LAUNCHER_ROOT, "public", g.coverUrl);
-      if (fs.existsSync(src) && !fs.existsSync(dest)) {
-        fs.mkdirSync(path.dirname(dest), { recursive: true });
-        fs.copyFileSync(src, dest);
-      }
-    });
-    return merged.games.length;
-  } catch (e) {
-    return null;
-  }
-}
 
 async function pushGit(cat, msg, doPush) {
   save(cat);
-  const synced = syncLauncherCatalog(cat);
-  if (synced !== null) console.log("  " + U.D("PC uygulamasi katalogu esitlendi: " + synced + " oyun"));
   const synced = syncLauncherCatalog(cat);
   if (synced !== null) console.log("  " + U.D("PC uygulamasi katalogu esitlendi: " + synced + " oyun"));
   if (!doPush) return ["catalog.json kaydedildi (push atlandi)"];
@@ -349,6 +313,19 @@ async function addFlow(cat, ctx) {
 
       const infoMenu = () => ctx.push("OYUN BILGILERI - " + U.trunc(title, 30), [
         { label: "Baglanti gir  (veya 'n' = dosya sec)", run: async c => {
+            c.setResult("BAGLANTI SECIMI", [
+              "  LINK YAZARSAN  -> sadece adres kaydedilir, BOYUT SINIRI YOK",
+              "                   100 GB / 500 GB oyunlar da eklenebilir",
+              "                   (dosya bize yuklenmez, kullanicidan indirir)",
+              "",
+              "  'n' YAZARSAN    -> dosyayi BIZIM SITEMIZE yüklersin",
+              "                   .torrent  -> downloads/torrents/",
+              "                   .apk      -> downloads/apk/",
+              "                   oyun      -> games/<id>/versions/1/",
+              "                   ⚠ 100 MB GitHub limiti var (torrent sorunsuz)",
+              "",
+              "Link ornegi : https://www.mediafire.com/file/xxxxx"
+            ]);
             const ans = await c.ask("Link gir ya da 'n' yazip dosya sec:");
             if (!ans) { st.link = ""; st.file = null; c.setResult("BAGLANTI", ["Bos birakildi - oyun 'yakinda' olur."]); return; }
             if (ans.toLowerCase() === "n") {
@@ -364,7 +341,7 @@ async function addFlow(cat, ctx) {
                 "Dosya   : " + path.basename(src),
                 "Boyut   : " + (up.size / 1048576).toFixed(2) + " MB",
                 "Konum   : " + up.rel,
-                up.warn ? "  DIKKAT: " + up.warn : "  GitHub'a yuklenmeye hazir."
+                up.warn ? "  " + up.warn : "  GitHub'a yuklenmeye hazir."
               ]);
               return;
             }
@@ -373,7 +350,12 @@ async function addFlow(cat, ctx) {
               return;
             }
             st.link = ans; st.file = null;
-            c.setResult("BAGLANTI KAYDEDILDI", [ans]);
+            c.setResult("BAGLANTI KAYDEDILDI", [
+              ans,
+              "",
+              "Sadece adres kaydedildi - dosya bize yuklenmedi.",
+              "Bu yuzden boyut siniri yok (100 GB oyun da eklenebilir)."
+            ]);
           } },
         { label: "Kapak gorseli sec", run: async c => {
             const src = pickFile("Gorseller (*.png;*.jpg;*.jpeg;*.webp)|*.png;*.jpg;*.jpeg;*.webp");
@@ -682,6 +664,107 @@ function findCat(c, q) {
   return c.categories.find(x => String(x.id) === s || x.slug.toLowerCase() === s || x.name.toLowerCase() === s) || null;
 }
 
+
+/* ==================== TORRENT HIZLI EKLEME ====================
+   .torrent dosyasini sec -> oyun adini dosya adindan alir,
+   kapak sorar, otomatik yukler. Tek adimda.
+   ================================================================ */
+
+/* Torrent dosyasindan oyun adi cikar */
+function titleFromTorrent(file) {
+  // 1) Bencoded info/name varsa onu kullan
+  try {
+    const buf = fs.readFileSync(file);
+    const txt = buf.toString("latin1");
+    const m = txt.match(/\d+:name(\d+):/);
+    if (m) {
+      const start = txt.indexOf(m[0]) + m[0].length;
+      const len = parseInt(m[1], 10);
+      const name = txt.slice(start, start + len);
+      if (name && name.length > 1) return decodeURIComponent(escape(name));
+    }
+  } catch {}
+  // 2) Dosya adindan: "Oyun Adi [Kalite].torrent" -> "Oyun Adi"
+  const base = path.basename(file).replace(/\.torrent$/i, "");
+  return base.replace(/[\[\(].*?[\]\)]/g, "").replace(/[._]+/g, " ").trim() || base;
+}
+
+async function torrentQuickAdd(cat, ctx) {
+  ctx.setResult("TORRENT EKLE", [
+    "Bir sonraki pencerede .torrent dosyasini sec.",
+    "",
+    "Otomatik yapilacaklar:",
+    "  • Oyun adi dosya adindan alinir",
+    "  • Dosya 'downloads/torrents/' klasorune yuklenir",
+    "  • Site + PC uygulamasi ayni anda guncellenir",
+    "  • Kullanici uygulamadan indirip istemciye acabilir",
+    "",
+    "Kategori sonradan degistirilebilir (Oyun duzenle)."
+  ]);
+
+  const src = pickFile(PICK_TORRENT);
+  if (!src) { ctx.setResult("IPTAL", ["Dosya secilmedi."]); return; }
+
+  const size = fs.statSync(src).size;
+  const auto = titleFromTorrent(src);
+  const title = await ctx.ask("Oyun adi (bos = '" + U.trunc(auto, 40) + "'):") || auto;
+
+  const category = cat.categories[0];
+  const id = nextId(cat);
+
+  // Torrent dosyasini yukle
+  const up = uploadFile(src, id, "torrent");
+
+  // Kapak: ayni klasorde .png/.jpg varsa otomatik kullan
+  let cover = null;
+  const dir = path.dirname(src);
+  const baseNoExt = path.basename(src).replace(/\.torrent$/i, "");
+  for (const ext of [".png", ".jpg", ".jpeg", ".webp"]) {
+    const cand = path.join(dir, baseNoExt + ext);
+    if (fs.existsSync(cand)) {
+      const cdir = path.join(ROOT, "games", String(id));
+      fs.mkdirSync(cdir, { recursive: true });
+      fs.copyFileSync(cand, path.join(cdir, "cover.png"));
+      cover = "games/" + id + "/cover.png";
+      break;
+    }
+  }
+  if (!cover) {
+    const askCap = await ctx.ask("Kapak gorseli sec (bos = placeholder):");
+    if (askCap) {
+      const cdir = path.join(ROOT, "games", String(id));
+      fs.mkdirSync(cdir, { recursive: true });
+      fs.copyFileSync(askCap, path.join(cdir, "cover.png"));
+      cover = "games/" + id + "/cover.png";
+    }
+  }
+
+  // Ekle
+  const g = await doAdd(cat, {
+    title, platform: PLATFORMS.find(p => p.key === "torrent"), category,
+    link: "", fileRel: up.rel, fileSize: size,
+    fileName: path.basename(src), fileKind: "torrent",
+    cover: cover || "images/placeholder.png",
+    version: "1.0.0"
+  });
+
+  const res = await pushGit(cat, "Torrent eklendi: " + g.title + " (admin araci)", true);
+
+  ctx.setResult("TORRENT EKLENDI: " + g.title, [
+    ...res,
+    "",
+    "Dosya     : " + path.basename(src) + "  (" + size.toLocaleString("tr-TR") + " bayt)",
+    "Konum     : " + up.rel,
+    "Kategori  : " + category.name + "  (Oyun duzenle ile degistir)",
+    "Kapak     : " + (cover || "placeholder"),
+    "",
+    "Sayfa     : " + gameUrl(g.id),
+    "",
+    "Site ve PC uygulamasi ayni anda guncellendi."
+  ]);
+  ctx.pop();
+}
+
 /* ==================== ANA MENU ==================== */
 function buildMenu(cat) {
   return {
@@ -689,6 +772,7 @@ function buildMenu(cat) {
     subtitle: cat.games.length + " OYUN  |  " + cat.upcomingGames.length + " YAKINDA  |  " + U.CFG.theme.toUpperCase() + " TEMA",
     items: [
       { label: U.c(U.T.ok, ">>") + "  Yeni oyun ekle", run: async ctx => { await addFlow(cat, ctx); } },
+      { label: U.c(U.T.ok, "@") + "  TORRENT EKLE (.torrent dosyasi sec)", hint: "HIZLI YOL - tek adimda torrent ekler", run: ctx => { torrentQuickAdd(cat, ctx); } },
       { label: U.c(U.T.accent, "*") + "  Toplu oyun ekleme (liste)", run: ctx => { importMenu(cat, ctx); } },
       { label: U.c(U.T.accent, "~") + "  Oyun duzenle", run: ctx => { editMenu(cat, ctx); } },
       { label: U.c(U.T.warn, "!") + "  Toplu islem (coklu sec)", run: ctx => { bulkMenu(cat, ctx); } },

@@ -102,6 +102,57 @@
   ],
   "games": [
     {
+      "id": 32,
+      "title": "Elden Ring",
+      "description": "",
+      "developer": "",
+      "publisher": "",
+      "releaseDate": "2026-09-30T18:43:59.010Z",
+      "categoryId": 1,
+      "genre": "",
+      "platform": "torrent",
+      "isFeatured": false,
+      "membersOnly": false,
+      "popularity": 0,
+      "stats": {
+        "views": 0,
+        "downloads": 0
+      },
+      "coverUrl": "images/placeholder.png",
+      "bannerUrl": null,
+      "requirements": {
+        "minimum": {},
+        "recommended": {}
+      },
+      "versions": [
+        {
+          "id": 32,
+          "version": "1.0.0",
+          "changelog": "",
+          "releasedAt": "2026-09-30T18:43:59.010Z"
+        }
+      ],
+      "latestVersion": {
+        "id": 32,
+        "version": "1.0.0",
+        "changelog": "",
+        "releasedAt": "2026-09-30T18:43:59.010Z"
+      },
+      "latestFiles": [],
+      "torrent": {
+        "magnetUrl": "",
+        "torrentUrl": "downloads/torrents/Elden Ring v1.10 [1080p].torrent",
+        "uploaded": true,
+        "fileSize": 176,
+        "fileName": "Elden Ring v1.10 [1080p].torrent"
+      },
+      "apk": null,
+      "screenshots": [],
+      "category": "action",
+      "createdAt": "2026-09-30T18:43:59.010Z",
+      "popularityLabel": ""
+    },
+    {
       "id": 31,
       "title": "Backrooms: Escape Together",
       "description": "Bir araştırmacı ekibi olarak, bu tekinsiz labirent (liminal labyrinth) hakkında daha fazla bilgi toplamak üzere Backrooms'a gönderiliyorsunuz. Ancak araştırma görevlerinizi tamamladıktan sonra, bir asansör arızası sizi en tehlikeli katların kalbine doğru hızla düşürerek, geriye tek bir amaç bırakıyor: kaçmak ve hayatta kalmak. Şu anda oynanabilir tek bölüm 0. Kat'tır. Bir giriş niteliğinde olan bu bölümde ekibiniz çeşitli araştırma görevlerini yerine getirmekle yükümlüdür. Bu görevler arasında varlıkların ve önemli noktaların kaydını tutmak, Backrooms hakkında veri toplamak ve kanıt niteliğindeki VHS kasetlerini bulmak yer alabilir. Unreal Engine 5 ile geliştirilen *Backrooms: Escape Together*, Backrooms'un ruhunu gerçekten yansıtan ilk yapım olacak. Bölümler prosedürel olarak oluşturulacak, çarpıcı bir kalitede dinamik ışıklandırmaya sahip olacak ve detaylarla zenginleştirilecektir. Oyunu gerçek bir Backrooms deneyimine dönüştürürken, erken erişim süreci boyunca sürekli yeni bölümler eklenecektir. Yeni nesil grafikler, prosedürel olarak oluşturulan bölümler, özenle hazırlanmış ses tasarımları ve oyuncuyu içine çeken bir oynanış; kendinizi gerçekten Backrooms'ta sıkışıp kalmış, yolunu kaybetmiş bir gezgin gibi hissetmenizi sağlayacak.",
