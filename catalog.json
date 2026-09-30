@@ -148,58 +148,6 @@
       "popularityLabel": ""
     },
     {
-      "id": 30,
-      "title": "Grand Theft Auto: Vice City",
-      "description": "SteamRIP onceden kurulmus (pre-installed) GTA Vice City surumu. 1986 Miami'sinin neonlu sokaklarinda Tommy Vercetti olarak suc imparatorlugu kur. Kurulum gerektirmez, gta-vc.exe ile dogrudan oyna.",
-      "developer": "Rockstar North",
-      "publisher": "Rockstar Games",
-      "releaseDate": "2003-05-13T00:00:00.000Z",
-      "categoryId": 1,
-      "genre": "Action, Adventure",
-      "platform": "pc",
-      "isFeatured": false,
-      "membersOnly": false,
-      "popularity": 18,
-      "stats": {
-        "views": 9,
-        "downloads": 2
-      },
-      "coverUrl": "games/30/cover.png",
-      "bannerUrl": null,
-      "requirements": {
-        "minimum": {},
-        "recommended": {}
-      },
-      "versions": [
-        {
-          "id": 40,
-          "version": "1.0.0",
-          "changelog": "SteamRIP pre-installed surum",
-          "releasedAt": "2026-09-24T20:44:52.930Z"
-        }
-      ],
-      "latestVersion": {
-        "id": 40,
-        "version": "1.0.0",
-        "changelog": "SteamRIP pre-installed surum",
-        "releasedAt": "2026-09-24T20:44:52.930Z"
-      },
-      "latestFiles": [],
-      "torrent": null,
-      "apk": null,
-      "screenshots": [],
-      "category": {
-        "id": 1,
-        "slug": "action",
-        "name": "Action",
-        "description": null,
-        "sortOrder": 0,
-        "createdAt": "2026-07-31T14:19:45.000Z"
-      },
-      "createdAt": "2026-09-24T20:44:52.930Z",
-      "popularityLabel": ""
-    },
-    {
       "id": 6,
       "title": "Grand Theft Auto V (2GB)",
       "description": "Optimize edilmiÅŸ 2 GB boyutlu GTA V repack'i. Ä°spanyolca aÃ§Ä±klamalarÄ±n yerine temiz TÃ¼rkÃ§e netleÅŸtirilmiÅŸ hali:\n- 2 GB iÃ§erik ve 2 GB iÃ§erik (paket halinde)\n- 1.29 sÃ¼rÃ¼mÃ¼nÃ¼ temel alÄ±r\n- Dokular en iyi karÅŸÄ±laÅŸtÄ±rmalarla en iyi kalitede\n- Self Radio iÃ§ermez\n- Mode Director'a baÄŸlÄ± deÄŸil\n- Radyo, sinema sesi veya gÃ¶rev yok\n- GÃ¶rev devamlÄ±lÄ±ÄŸÄ± yok; serbest mod dÄ±ÅŸÄ±nda fazlasÄ±nÄ± yapabilirsin\n- Ã‡ok sayÄ±da doku kaldÄ±rÄ±ldÄ±\n- HaritanÄ±n %90'Ä± kaldÄ±rÄ±ldÄ±\n- BugÃ¼nÃ¼n en iyi optimizasyonu",
