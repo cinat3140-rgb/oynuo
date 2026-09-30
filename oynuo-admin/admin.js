@@ -13,6 +13,10 @@ const U = require("./ui.js");
 const ROOT = path.resolve(__dirname, "..");
 const CATALOG = path.join(ROOT, "catalog.json");
 const SITE = "https://cinat3140-rgb.github.io/oynuo";
+const LAUNCHER_CATALOG = "C:/Users/PC/OneDrive/Belgeler/Default Project/GameLauncher/launcher/public/catalog.json";
+const LAUNCHER_ROOT = "C:/Users/PC/OneDrive/Belgeler/Default Project/GameLauncher/launcher";
+const LAUNCHER_CATALOG = "C:/Users/PC/OneDrive/Belgeler/Default Project/GameLauncher/launcher/public/catalog.json";
+const LAUNCHER_ROOT = "C:/Users/PC/OneDrive/Belgeler/Default Project/GameLauncher/launcher";
 const PLATFORMS = [
   { key: "pc", label: "PC (Windows) - indirme linki", badge: "PC" },
   { key: "torrent", label: "Torrent - magnet / .torrent", badge: "TORRENT" },
@@ -73,8 +77,78 @@ function save(cat) {
   cat.games.sort((a, b) => b.id - a.id);
   fs.writeFileSync(CATALOG, JSON.stringify(cat, null, 2) + "\n", "utf8");
 }
+function syncLauncherCatalog(cat) {
+  // PC uygulamasinin gomulu katalogunu oynuo ile ayni yap
+  try {
+    if (!fs.existsSync(LAUNCHER_ROOT)) return null;
+    const merged = JSON.parse(JSON.stringify(cat));
+    // backend sayaclarini tazele
+    try {
+      const Database = require("C:/Users/PC/OneDrive/Belgeler/Default Project/GameLauncher/backend/node_modules/better-sqlite3");
+      const db = new Database("C:/Users/PC/OneDrive/Belgeler/Default Project/GameLauncher/backend/data/app.sqlite", { readonly: true });
+      const m = {};
+      db.prepare("SELECT id, view_count, download_count FROM games").all().forEach(r => { m[String(r.id)] = { views: r.view_count || 0, downloads: r.download_count || 0 }; });
+      db.close();
+      merged.games.forEach(g => { const x = m[String(g.id)]; g.stats = x ? { views: x.views, downloads: x.downloads } : { views: 0, downloads: 0 }; });
+      merged.metricsUrl = "http://127.0.0.1:3001/api/metrics";
+    } catch {}
+    fs.writeFileSync(LAUNCHER_CATALOG, JSON.stringify(merged, null, 2) + "\n", "utf8");
+
+    // kapaklari kopyala (yeni oyunlar icin)
+    merged.games.forEach(g => {
+      if (!g.coverUrl || g.coverUrl.includes("placeholder")) return;
+      const src = path.join(ROOT, g.coverUrl);
+      const dest = path.join(LAUNCHER_ROOT, "public", g.coverUrl);
+      if (fs.existsSync(src) && !fs.existsSync(dest)) {
+        fs.mkdirSync(path.dirname(dest), { recursive: true });
+        fs.copyFileSync(src, dest);
+      }
+    });
+    return merged.games.length;
+  } catch (e) {
+    return null;
+  }
+}
+
+function syncLauncherCatalog(cat) {
+  // PC uygulamasinin gomulu katalogunu oynuo ile ayni yap
+  try {
+    if (!fs.existsSync(LAUNCHER_ROOT)) return null;
+    const merged = JSON.parse(JSON.stringify(cat));
+    // backend sayaclarini tazele
+    try {
+      const Database = require("C:/Users/PC/OneDrive/Belgeler/Default Project/GameLauncher/backend/node_modules/better-sqlite3");
+      const db = new Database("C:/Users/PC/OneDrive/Belgeler/Default Project/GameLauncher/backend/data/app.sqlite", { readonly: true });
+      const m = {};
+      db.prepare("SELECT id, view_count, download_count FROM games").all().forEach(r => { m[String(r.id)] = { views: r.view_count || 0, downloads: r.download_count || 0 }; });
+      db.close();
+      merged.games.forEach(g => { const x = m[String(g.id)]; g.stats = x ? { views: x.views, downloads: x.downloads } : { views: 0, downloads: 0 }; });
+      merged.metricsUrl = "http://127.0.0.1:3001/api/metrics";
+    } catch {}
+    fs.writeFileSync(LAUNCHER_CATALOG, JSON.stringify(merged, null, 2) + "\n", "utf8");
+
+    // kapaklari kopyala (yeni oyunlar icin)
+    merged.games.forEach(g => {
+      if (!g.coverUrl || g.coverUrl.includes("placeholder")) return;
+      const src = path.join(ROOT, g.coverUrl);
+      const dest = path.join(LAUNCHER_ROOT, "public", g.coverUrl);
+      if (fs.existsSync(src) && !fs.existsSync(dest)) {
+        fs.mkdirSync(path.dirname(dest), { recursive: true });
+        fs.copyFileSync(src, dest);
+      }
+    });
+    return merged.games.length;
+  } catch (e) {
+    return null;
+  }
+}
+
 async function pushGit(cat, msg, doPush) {
   save(cat);
+  const synced = syncLauncherCatalog(cat);
+  if (synced !== null) console.log("  " + U.D("PC uygulamasi katalogu esitlendi: " + synced + " oyun"));
+  const synced = syncLauncherCatalog(cat);
+  if (synced !== null) console.log("  " + U.D("PC uygulamasi katalogu esitlendi: " + synced + " oyun"));
   if (!doPush) return ["catalog.json kaydedildi (push atlandi)"];
   try {
     const run = c => execSync(c, { cwd: ROOT, stdio: ["ignore", "pipe", "pipe"] });
@@ -182,30 +256,181 @@ function liveCheck() {
   });
 }
 
-/* ==================== OYUN EKLEME (alt menulerle) ==================== */
+
+/* ==================== DOSYA YUKLEME ==================== */
+/* Windows dosya secme dialogu (PowerShell OpenFileDialog) */
+function pickFile(filter) {
+  const ps = filter || 'Tum dosyalar (*.*)|*.*';
+  const script = 'Add-Type -AssemblyName System.Windows.Forms;' +
+    '$d = New-Object System.Windows.Forms.OpenFileDialog;' +
+    '$d.Title = "Dosya sec (Oynuo Admin)";' +
+    '$d.Filter = "' + ps.replace(/"/g, '\"') + '";' +
+    'if ($d.ShowDialog() -eq "OK") { $d.FileName }';
+  try {
+    const out = execSync('powershell.exe -NoProfile -STA -Command "' + script.replace(/"/g, '\\"') + '"', { encoding: 'utf8' });
+    const p = String(out).trim().split('\n').pop().trim();
+    return p && fs.existsSync(p) ? p : null;
+  } catch {
+    return null;
+  }
+}
+const PICK_TORRENT = 'Torrent dosyalari (*.torrent)|*.torrent|Diger dosyalar (*.*)|*.*';
+const PICK_GAME = 'Oyun dosyalari (*.zip;*.rar;*.7z;*.exe;*.iso;*.bin)|*.zip;*.rar;*.7z;*.exe;*.iso;*.bin|Her tur dosya (*.*)|*.*';
+const PICK_APK = 'Android APK (*.apk)|*.apk';
+
+/* GitHub 100 MB limiti */
+const GH_LIMIT = 100 * 1024 * 1024;
+
+/* Dosyayi kopyalayip katalog'a yaz. Doner: {rel, size, warn} */
+function uploadFile(src, gameId, kind) {
+  const stat = fs.statSync(src);
+  const size = stat.size;
+  let rel, destDir;
+
+  if (kind === "torrent") {
+    destDir = path.join(ROOT, "downloads", "torrents");
+    const base = path.basename(src);
+    rel = "downloads/torrents/" + base;
+  } else if (kind === "apk") {
+    destDir = path.join(ROOT, "downloads", "apk");
+    fs.mkdirSync(destDir, { recursive: true });
+    rel = "downloads/apk/" + path.basename(src);
+  } else {
+    // oyun dosyasi: games/<id>/versions/<v>/
+    destDir = path.join(ROOT, "games", String(gameId), "versions", "1");
+    rel = "games/" + gameId + "/versions/1/" + path.basename(src);
+  }
+  fs.mkdirSync(destDir, { recursive: true });
+  const dest = path.join(destDir, path.basename(src));
+  fs.copyFileSync(src, dest);
+  return {
+    rel: rel.split(path.sep).join("/"),
+    size,
+    warn: size > GH_LIMIT ? "DOSYA " + (size / 1073741824).toFixed(2) + " GB - GitHub 100 MB limiti var, yukleme reddedilecek!" : null
+  };
+}
+
+/* addFlow icindeki link sorusunu iki modlu yap */
+async function uploadFlow(cat, ctx, platform, category, title) {
+  const ans = await ctx.ask("Baglanti / N = dosya sec:");
+  if (!ans) { ctx.setResult("BILGI", ["Link bos birakildi - oyun 'yakinda' olur."]); return null; }
+  if (ans.toLowerCase() === "n") {
+    ctx.setResult("DOSYA SEC", ["Bir sonraki pencerede dosya sec...", "Torrent icin .torrent dosyasi, oyun icin .zip/.exe/.rar/.7z"]);
+    const filter = platform.key === "torrent" ? PICK_TORRENT : platform.key === "apk" ? PICK_APK : PICK_GAME;
+    const src = pickFile(filter);
+    if (!src) { ctx.setResult("IPTAL", ["Dosya secilmedi."]); return null; }
+    const kind = platform.key === "torrent" ? "torrent" : platform.key === "apk" ? "apk" : "game";
+    const id = nextId(cat);
+    const up = uploadFile(src, id, kind);
+    return { mode: "file", ...up, abs: src, kind };
+  }
+  if (!isUrl(ans) && !ans.startsWith("magnet:")) {
+    ctx.setResult("HATA", ["Gecersiz link. http/https ile baslamali ya da 'n' yazip dosya secmelisin."]);
+    return null;
+  }
+  return { mode: "link", url: ans };
+}
+
+/* ==================== OYUN EKLEME (alt menulerle) ====================
+   Mod 1: Link girersin  -> direkt kaydedilir
+   Mod 2: "n" yazarsin  -> dosya secilir, kopyalanir, katalog'a yazilir
+   Torrent dosyalari (.torrent) her iki yerde de calisir
+   ================================================================ */
 async function addFlow(cat, ctx) {
   const title = await ctx.ask("Oyun adi:");
   if (!title) { ctx.setResult("IPTAL", ["Oyun adi bos."]); return; }
-  // PLATFORM -> alt menu
+
+  // 1) PLATFORM sec
   platformMenu(ctx, async p => {
+    // 2) KATEGORI sec
     categoryMenu(cat, ctx, async category => {
-      ctx.push("OYUN BILGILERI - " + U.trunc(title, 30), [
-        { label: "Baglanti / indirme linki gir", run: async c2 => { const link = await c2.ask(p.badge + " baglantisi (bos = 'yakinda'):"); if (link && p.key !== "torrent" && !isUrl(link)) { c2.setResult("HATA", ["Gecersiz link (http/https olmali)"]); return; } c2.setResult("LINK KAYDEDILDI", [link || "(bos - oyun 'yakinda' olur)"]); } },
-        { label: "Kapak gorseli gir", run: async c2 => { const cv = await c2.ask("Dosya yolu veya URL (bos olabilir):"); c2.setResult("KAPAK", [cv || "(placeholder kullanilacak)"]); } },
-        { label: "Gelistirici / yayinci / tur", run: async c2 => { c2.setResult("BILGI", ["Bu adimi ekleme sirasinda doldurabilirsin."]); } },
-        { label: "Boyut / surum / aciklama", run: async c2 => { c2.setResult("BILGI", ["Bu adimi ekleme sirasinda doldurabilirsin."]); } },
-        { label: "ONAYLA ve oyunu ekle", run: async c2 => {
-            const g = await doAdd(cat, { title, platform: p, category: c2._add || category, link: c2._link || "", version: "1.0.0", featured: false });
+      // 3) BILGI ekrani
+      const st = { link: null, file: null, cover: null, dev: "", size: "" };
+
+      const infoMenu = () => ctx.push("OYUN BILGILERI - " + U.trunc(title, 30), [
+        { label: "Baglanti gir  (veya 'n' = dosya sec)", run: async c => {
+            const ans = await c.ask("Link gir ya da 'n' yazip dosya sec:");
+            if (!ans) { st.link = ""; st.file = null; c.setResult("BAGLANTI", ["Bos birakildi - oyun 'yakinda' olur."]); return; }
+            if (ans.toLowerCase() === "n") {
+              const filter = p.key === "torrent" ? PICK_TORRENT : p.key === "apk" ? PICK_APK : PICK_GAME;
+              c.setResult("DOSYA SEC", ["Dosya secme penceresi aciliyor..."]);
+              const src = pickFile(filter);
+              if (!src) { c.setResult("IPTAL", ["Dosya secilmedi."]); return; }
+              const kind = p.key === "torrent" ? "torrent" : p.key === "apk" ? "apk" : "game";
+              const up = uploadFile(src, nextId(cat), kind);
+              st.file = { ...up, abs: src, kind };
+              st.link = "";
+              c.setResult("DOSYA YUKLENDI", [
+                "Dosya   : " + path.basename(src),
+                "Boyut   : " + (up.size / 1048576).toFixed(2) + " MB",
+                "Konum   : " + up.rel,
+                up.warn ? "  DIKKAT: " + up.warn : "  GitHub'a yuklenmeye hazir."
+              ]);
+              return;
+            }
+            if (!isUrl(ans) && !ans.startsWith("magnet:")) {
+              c.setResult("HATA", ["Gecersiz. http/https ile baslamali ya da 'n' yaz."]);
+              return;
+            }
+            st.link = ans; st.file = null;
+            c.setResult("BAGLANTI KAYDEDILDI", [ans]);
+          } },
+        { label: "Kapak gorseli sec", run: async c => {
+            const src = pickFile("Gorseller (*.png;*.jpg;*.jpeg;*.webp)|*.png;*.jpg;*.jpeg;*.webp");
+            if (!src) { c.setResult("IPTAL", []); return; }
+            const id = nextId(cat);
+            const dir = path.join(ROOT, "games", String(id));
+            fs.mkdirSync(dir, { recursive: true });
+            fs.copyFileSync(src, path.join(dir, "cover.png"));
+            st.cover = "games/" + id + "/cover.png";
+            c.setResult("KAPAK", [st.cover]);
+          } },
+        { label: "Gelistirici / yayinci / tur", run: async c => {
+            st.dev = await c.ask("Gelistirici (bos = gec):") || "";
+            c.setResult("GELISTIRICI", [st.dev || "(bos)"]);
+          } },
+        { label: "Aciklama yaz", run: async c => { c.setResult("BILGI", ["Eklerken otomatik 'Aciklama' alani bos kalir."]); } },
+        { label: "ONAYLA ve kaydet", run: async c => {
+            if (!st.link && !st.file) {
+              c.setResult("HATA", ["Once baglanti gir ya da 'n' ile dosya sec."]);
+              return;
+            }
+            const opts = {
+              title, platform: p, category,
+              version: "1.0.0", developer: st.dev,
+              cover: st.cover || "images/placeholder.png"
+            };
+            let g;
+            if (st.file) {
+              // Dosya yuklendi: kaydedilmis dosyayi isaretle
+              const kind = st.file.kind;
+              const size = st.file.size;
+              g = await doAdd(cat, { ...opts, link: "", fileRel: st.file.rel, fileSize: size, fileName: path.basename(st.file.abs), fileKind: kind });
+            } else {
+              g = await doAdd(cat, { ...opts, link: st.link });
+            }
             const res = await pushGit(cat, "Oyun eklendi: " + g.title + " [" + p.badge + "] (admin araci)", true);
-            c2.setResult("EKLENDI: " + g.title, [...res, "", "Sayfa: " + gameUrl(g.id)]);
-            c2.pop(); c2.pop();
+            c.setResult("EKLENDI: " + g.title, [
+              ...res,
+              "",
+              "Sayfa : " + gameUrl(g.id),
+              "Baglanti: " + (st.file ? st.file.rel : st.link)
+            ]);
+            c.pop(); c.pop();
           } }
       ]);
+      infoMenu();
       ctx.clearResult();
-      ctx.setResult("OYUN EKLENDI: " + title, ["Yukari sekmelerden platform ve kategori secildi.", "Simdi " + U.D("OYUN BILGILERI") + " sekmesinden baglanti ve kapak gir."]);
+      ctx.setResult("OYUN BILGILERI: " + title, [
+        "Platform ve kategori secildi: " + p.badge + " / " + category.name,
+        "",
+        "Simdi OYUN BILGILERI sekmesinden baglanti gir:",
+        "  • Link yazarsan  -> site + uygulamaya direkt link olarak eklenir",
+        "  • 'n' yazarsan   -> dosya sec, otomatik yuklenir (torrent dahil)"
+      ]);
     });
     ctx.clearResult();
-    ctx.setResult("OYUN EKLENDI: " + title, ["Simdi " + U.D("KATEGORI SEC") + " ekranindan kategori sec."]);
+    ctx.setResult("OYUN: " + title, ["Simdi KATEGORI SEC ekranindan kategori sec."]);
   });
 }
 
@@ -225,9 +450,29 @@ async function doAdd(cat, o) {
     latestFiles: [], torrent: null, apk: null, screenshots: [],
     category: o.category.slug, createdAt: now, popularityLabel: ""
   };
-  if (o.platform.key === "torrent" && o.link) { const m = o.link.startsWith("magnet:"); g.torrent = { magnetUrl: m ? o.link : "", torrentUrl: m ? "" : o.link }; }
-  else if (o.platform.key === "apk" && o.link) g.apk = { url: o.link };
-  else if (o.link) g.latestFiles.push({ id, versionId: id, source: "external", kind: "file", fileName: o.fileName || o.title, fileSize: o.sizeBytes || 0, sha256: "", executablePath: "", downloadUrl: o.link });
+  // Baglanti veya yuklenmis dosya
+  if (o.fileRel) {
+    // Dosya admin tarafindan yuklendi -> relative yol
+    const rel = o.fileRel;
+    if (o.platform.key === "torrent") {
+      g.torrent = { magnetUrl: "", torrentUrl: rel, uploaded: true, fileSize: o.fileSize || 0, fileName: o.fileName || "" };
+    } else if (o.platform.key === "apk") {
+      g.apk = { url: rel, uploaded: true, fileSize: o.fileSize || 0, fileName: o.fileName || "" };
+    } else {
+      g.latestFiles.push({
+        id, versionId: id, source: "uploaded", kind: o.fileKind === "game" ? "archive" : "file",
+        fileName: o.fileName || o.title, fileSize: o.fileSize || 0,
+        sha256: "", executablePath: "", downloadUrl: rel
+      });
+    }
+  } else if (o.platform.key === "torrent" && o.link) {
+    const m = o.link.startsWith("magnet:");
+    g.torrent = { magnetUrl: m ? o.link : "", torrentUrl: m ? "" : o.link };
+  } else if (o.platform.key === "apk" && o.link) {
+    g.apk = { url: o.link };
+  } else if (o.link) {
+    g.latestFiles.push({ id, versionId: id, source: "external", kind: "file", fileName: o.fileName || o.title, fileSize: o.sizeBytes || 0, sha256: "", executablePath: "", downloadUrl: o.link });
+  }
   cat.games.push(g);
   return g;
 }
@@ -526,9 +771,20 @@ async function cli() {
     const title = f.title || f.t;
     if (!title) { out(U.c(U.T.err, "Hata: --title gerekli") + "\n  " + U.D('ornek: node admin.js add --title "GTA" --category action --link https://...') + "\n  " + U.D('         node admin.js add --title "GTA VI" --platform torrent --link "magnet:?xt=..."')); return; }
     if (!category) { out(U.c(U.T.err, "Hata: kategori yok") + "\n  " + U.D("secenekler: " + cat.categories.map(c => c.slug).join(", "))); return; }
-    const link = f.link || f.l || "";
-    if (link && plat.key !== "torrent" && !isUrl(link)) { out(U.c(U.T.err, "Hata: gecersiz link (http/https olmali)")); return; }
-    const g = await doAdd(cat, { title, platform: plat, category, link, version: f.version || "1.0.0", developer: f.dev || "", publisher: f.pub || "", genre: f.genre || "", description: f.desc || "", featured: f.featured === "1", sizeBytes: parseSize(f.size) });
+    // Dosya modu: --file <yol> (n yerine - otomatik yukler)
+    const fileArg = f.file || f.f;
+    let g;
+    if (fileArg) {
+      if (!fs.existsSync(fileArg)) { out(U.c(U.T.err, "Dosya yok: " + fileArg)); return; }
+      const kind = plat.key === "torrent" ? "torrent" : plat.key === "apk" ? "apk" : "game";
+      const up = uploadFile(fileArg, nextId(cat), kind);
+      g = await doAdd(cat, { title, platform: plat, category, link: "", fileRel: up.rel, fileSize: up.size, fileName: path.basename(fileArg), fileKind: kind, version: f.version || "1.0.0", developer: f.dev || "", genre: f.genre || "", description: f.desc || "", featured: f.featured === "1" });
+      if (up.warn) U.warn(up.warn);
+    } else {
+      const link = f.link || f.l || "";
+      if (link && plat.key !== "torrent" && !isUrl(link)) { out(U.c(U.T.err, "Hata: gecersiz link (http/https olmali) ya da --file <dosya> kullan")); return; }
+      g = await doAdd(cat, { title, platform: plat, category, link, version: f.version || "1.0.0", developer: f.dev || "", publisher: f.pub || "", genre: f.genre || "", description: f.desc || "", featured: f.featured === "1", sizeBytes: parseSize(f.size) });
+    }
     const res = await pushGit(cat, "Oyun eklendi: " + g.title + " [" + plat.badge + "] (admin araci)", f["no-push"] !== "1");
     out(U.B("EKLENDI: " + g.title) + "\n" + res.map(r => U.D("  " + r)).join("\n") + "\n  " + U.c(U.T.accent, gameUrl(g.id)));
     return;
