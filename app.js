@@ -420,6 +420,10 @@ function platformInfo(g) {
 function primaryAction(g) {
   var pi = platformInfo(g);
   if (pi) return { isExternal: true, url: pi.url, platformExtra: pi };
+  // Parcali buyuk dosya (admin panelinden yuklenmis)
+  if (g.chunked && g.chunked.enabled) {
+    return { isExternal: false, isInternal: true, isChunked: true, url: "", chunked: g.chunked, platformExtra: null };
+  }
   var file = Array.isArray(g.latestFiles) && g.latestFiles.length ? g.latestFiles[0] : null;
   var isExternal = file ? file.source === "external" : !!(g.externalUrl && !g.downloadUrl);
   var isInternal = file && (file.source === "uploaded" || !isExternal);
@@ -521,7 +525,9 @@ var version = g.latestVersion ? g.latestVersion.version : (g.version || null);
           (developer ? '<div class="gcard-dev">' + esc(developer) + "</div>" : "") +
           (fileBadge || brokenBadge(file) ? '<div class="gcard-meta">' + (fileBadge ? '<span class="gcard-ext">' + fileBadge + "</span>" : "") + brokenBadge(file) + "</div>" : "") +
           '<div class="gcard-actions">' +
-            (a.url
+            (a.isChunked
+              ? '<button class="btn btn-primary btn-sm" data-chunked-download="' + g.id + '">⬇⬇ Parçalı ÷ ' + a.chunked.chunkCount + ' parça</button>'
+              : a.url
               ? '<a class="btn btn-primary btn-sm" href="' + esc(urlTarget) + '" target="_blank" rel="noopener nofollow" data-metric="download:' + g.id + '">' + urlIcon + " " + urlLabel + "</a>"
               : '<span class="btn btn-ghost btn-sm" style="cursor:default">Yakında</span>') +
             '<a class="btn btn-ghost btn-sm" href="#/oyun/' + g.id + '">İncele</a>' +

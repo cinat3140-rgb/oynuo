@@ -582,3 +582,10 @@ h1, h2, h3, p { margin: 0; }
 [data-theme="light"] .soon-label { color: #fff; }
 .soon-rel { color: var(--accent); font-weight: 700; white-space: nowrap; }
 .gcard-soon:hover { transform: none; }
+
+
+/* ---------- Parcali buyuk dosya indirme ---------- */
+.chunk-toast { position: fixed; right: 18px; bottom: 18px; z-index: 900; width: 320px; background: var(--bg-raised, #1a1d26); border: 1px solid var(--border, #2a3040); border-radius: 12px; padding: 14px; box-shadow: 0 14px 40px rgba(0,0,0,.5); }
+.chunk-bar { height: 8px; background: var(--bg, #12151d); border-radius: 999px; overflow: hidden; margin-bottom: 9px; }
+.chunk-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--primary, #5a6cf0), var(--accent, #8b5cf6)); transition: width .25s; }
+.chunk-txt { font-size: .8rem; color: var(--text-dim, #99a); text-align: center; }

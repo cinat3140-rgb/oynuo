@@ -270,6 +270,7 @@ function pickFile(filter) {
 const PICK_TORRENT = 'Torrent dosyalari (*.torrent)|*.torrent|Diger dosyalar (*.*)|*.*';
 const PICK_GAME = 'Oyun dosyalari (*.zip;*.rar;*.7z;*.exe;*.iso;*.bin)|*.zip;*.rar;*.7z;*.exe;*.iso;*.bin|Her tur dosya (*.*)|*.*';
 const PICK_APK = 'Android APK (*.apk)|*.apk';
+const PICK_BIG = 'Buyuk oyun dosyalari (*.zip;*.rar;*.7z;*.iso;*.bin)|*.zip;*.rar;*.7z;*.iso;*.bin|Her tur dosya (*.*)|*.*';
 
 /* GitHub 100 MB limiti */
 const GH_LIMIT = 100 * 1024 * 1024;
@@ -794,6 +795,170 @@ async function torrentQuickAdd(cat, ctx) {
   ctx.pop();
 }
 
+
+/* ==================== BUYUK DOSYA SISTEMI (parcali yukleme) ====================
+   2 GB oyunu ~95 MB parcalara boler, GitHub'a yukler.
+   Uygulama parcalari indirip birlestirir.
+   ============================================================================== */
+
+const CHUNK_DIR = path.join(ROOT, "downloads", "chunks");
+const CHUNK_SIZE = 95 * 1024 * 1024;      // 95 MB (GitHub 100 MB altinda)
+const REPO_WARN = 1500 * 1024 * 1024;     // 1.5 GB uyari esigi
+
+function dirSize(d) {
+  let s = 0;
+  if (!fs.existsSync(d)) return 0;
+  for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+    const p = path.join(d, e.name);
+    s += e.isDirectory() ? dirSize(p) : fs.statSync(p).size;
+  }
+  return s;
+}
+
+/* Dosyayi parcalara bol -> { dir, base, ext, parts, size } */
+function splitFile(src) {
+  const stat = fs.statSync(src);
+  const total = stat.size;
+  const name = path.basename(src);
+  const base = name.replace(/\.[^.]+$/, "");
+  const ext = path.extname(name);
+  const dir = path.join(CHUNK_DIR, base);
+  fs.rmSync(dir, { recursive: true, force: true });
+  fs.mkdirSync(dir, { recursive: true });
+
+  const fd = fs.openSync(src, "r");
+  const buf = Buffer.allocUnsafe(CHUNK_SIZE);
+  let idx = 0, read = 0, totalRead = 0;
+
+  while (totalRead < total) {
+    const want = Math.min(CHUNK_SIZE, total - totalRead);
+    read = fs.readSync(fd, buf, 0, want, totalRead);
+    if (read <= 0) break;
+    const out = path.join(dir, "part-" + String(idx + 1).padStart(3, "0") + ".bin");
+    fs.writeFileSync(out, buf.slice(0, read));
+    totalRead += read;
+    idx++;
+    process.stdout.write("\r   parcala " + idx + "  (" + (totalRead / 1048576).toFixed(0) + " / " + (total / 1048576).toFixed(0) + " MB)   ");
+  }
+  fs.closeSync(fd);
+  process.stdout.write("\n");
+
+  fs.writeFileSync(path.join(dir, "manifest.json"), JSON.stringify({
+    file: name, size: total, chunks: idx, chunkSize: CHUNK_SIZE,
+    createdAt: new Date().toISOString()
+  }, null, 2) + "\n", "utf8");
+
+  const repo = dirSize(CHUNK_DIR);
+  return {
+    dir, base, ext, parts: idx, size: total,
+    rel: "downloads/chunks/" + base,
+    partRel: i => "downloads/chunks/" + base + "/part-" + String(i).padStart(3, "0") + ".bin",
+    warn: repo > REPO_WARN
+      ? "UYARI: Parcalarla birlikte depo " + (repo / 1073741824).toFixed(1) + " GB. GitHub 2 GB sinirina yakinlasiliyor - yeni oyun eklemek riskli."
+      : null
+  };
+}
+
+function cleanupChunks(base) {
+  const d = path.join(CHUNK_DIR, base);
+  if (fs.existsSync(d)) { try { fs.rmSync(d, { recursive: true, force: true }); } catch {} }
+}
+
+/* ==================== BUYUK DOSYA EKLEME AKIISI ==================== */
+async function bigFileAddFlow(cat, ctx) {
+  ctx.setResult("BUYUK DOSYA EKLEME", [
+    "GTA V gibi 2 GB oyunlari bu sekmeden eklersin.",
+    "",
+    "Nasil calisir:",
+    "  1) Dosyayi secersin (2-50 GB olabilir)",
+    "  2) Sistem ~95 MB parcalara boler",
+    "  3) GitHub'a yukler (her parca 100 MB altinda)",
+    "  4) Oyunu ekler; indirme butonu parcalari cekip birlestirir",
+    "",
+    "DIKKAT: Depo limiti ~2 GB. Cok buyuk oyunlarda uyari verir."
+  ]);
+
+  const src = pickFile(PICK_BIG);
+  if (!src) { ctx.setResult("IPTAL", ["Dosya secilmedi."]); return; }
+
+  const size = fs.statSync(src).size;
+  if (size < 100 * 1024 * 1024) {
+    ctx.setResult("BILGI", ["Bu dosya 100 MB altinda - normal 'n' yontemini kullanabilirsin."]);
+    return;
+  }
+
+  const auto = path.basename(src).replace(/.[^.]+$/, "");
+  const title = await ctx.ask("Oyun adi (bos = '" + U.trunc(auto, 40) + "'):") || auto;
+
+  // Platform
+  const plat = await ctx.ask("Platform (pc / torrent / apk) [pc]:") || "pc";
+  const platform = PLATFORMS.find(x => x.key === plat.toLowerCase()) || PLATFORMS[0];
+
+  const category = cat.categories[0];
+  const id = nextId(cat);
+
+  // Parcalama
+  ctx.setResult("PARCALANIYOR", [path.basename(src) + " (" + (size / 1073741824).toFixed(2) + " GB)"]);
+  const up = splitFile(src);
+
+  // Kapak
+  let cover = null;
+  const dir0 = path.dirname(src);
+  const baseNoExt = path.basename(src).replace(/.[^.]+$/, "");
+  for (const e of [".png", ".jpg", ".jpeg", ".webp"]) {
+    const c = path.join(dir0, baseNoExt + e);
+    if (fs.existsSync(c)) {
+      const cd = path.join(ROOT, "games", String(id));
+      fs.mkdirSync(cd, { recursive: true });
+      fs.copyFileSync(c, path.join(cd, "cover.png"));
+      cover = "games/" + id + "/cover.png";
+      break;
+    }
+  }
+
+  // Catalog'a ekle (chunked bilgisiyle)
+  const now = new Date().toISOString();
+  const g = {
+    id, title,
+    description: "", developer: "", publisher: "",
+    releaseDate: now, categoryId: category.id, genre: "",
+    platform: platform.key, isFeatured: false, membersOnly: false,
+    popularity: 0, stats: { views: 0, downloads: 0 },
+    coverUrl: cover || "images/placeholder.png", bannerUrl: null,
+    requirements: { minimum: {}, recommended: {} },
+    versions: [{ id, version: "1.0.0", changelog: "", releasedAt: now }],
+    latestVersion: { id, version: "1.0.0", changelog: "", releasedAt: now },
+    latestFiles: [], torrent: null, apk: null, screenshots: [],
+    category: category.slug, createdAt: now, popularityLabel: "",
+    chunked: {
+      enabled: true,
+      chunkCount: up.parts,
+      chunkSize: CHUNK_SIZE,
+      fileName: path.basename(src),
+      fileSize: up.size,
+      baseUrl: up.rel,
+      manifestUrl: up.rel + "/manifest.json"
+    }
+  };
+  cat.games.push(g);
+
+  const res = await pushGit(cat, "Buyuk dosya eklendi (" + (up.size / 1073741824).toFixed(1) + " GB): " + title + " (admin araci)", true);
+
+  ctx.setResult("BUYUK DOSYA EKLENDI: " + title, [
+    ...res,
+    "",
+    "Dosya      : " + path.basename(src),
+    "Boyut      : " + (up.size / 1073741824).toFixed(2) + " GB",
+    "Parca      : " + up.parts + " x ~" + (CHUNK_SIZE / 1048576).toFixed(0) + " MB",
+    "Konum      : " + up.rel + "/",
+    "Kategori   : " + category.name + "  (Oyun duzenle ile degistir)",
+    up.warn ? "" : "",
+    up.warn || "",
+    "Sayfa      : " + gameUrl(g.id)
+  ].filter(Boolean));
+  ctx.pop();
+}
+
 /* ==================== ANA MENU ==================== */
 function buildMenu(cat) {
   return {
@@ -802,6 +967,7 @@ function buildMenu(cat) {
     items: [
       { label: U.c(U.T.ok, ">>") + "  Yeni oyun ekle", run: async ctx => { await addFlow(cat, ctx); } },
       { label: U.c(U.T.ok, "@") + "  TORRENT EKLE (.torrent dosyasi sec)", hint: "HIZLI YOL - tek adimda torrent ekler", run: ctx => { torrentQuickAdd(cat, ctx); } },
+      { label: U.c(U.T.warn, "B") + "  BUYUK DOSYA EKLE (2GB+ oyun)", hint: "GTA V gibi - parcalara bolup yukler", run: ctx => { bigFileAddFlow(cat, ctx); } },
       { label: U.c(U.T.accent, "*") + "  Toplu oyun ekleme (liste)", run: ctx => { importMenu(cat, ctx); } },
       { label: U.c(U.T.accent, "~") + "  Oyun duzenle", run: ctx => { editMenu(cat, ctx); } },
       { label: U.c(U.T.warn, "!") + "  Toplu islem (coklu sec)", run: ctx => { bulkMenu(cat, ctx); } },
