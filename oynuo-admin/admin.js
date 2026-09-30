@@ -102,6 +102,35 @@ function syncLauncherCatalog(cat) {
         fs.copyFileSync(src, dest);
       }
     });
+
+    // KALAN KLASORLERI TEMIZLE (silinen oyunlarin kapagi gitmesin)
+    const validIds = new Set(merged.games.map(g => String(g.id)));
+    [path.join(LAUNCHER_ROOT, "public", "games"), path.join(LAUNCHER_ROOT, "dist", "games")].forEach(base => {
+      if (!fs.existsSync(base)) return;
+      fs.readdirSync(base).forEach(dir => {
+        if (!validIds.has(dir)) {
+          try { fs.rmSync(path.join(base, dir), { recursive: true, force: true }); console.log("  " + U.D("temizlendi: " + base.split(/[\\\/]/).pop() + "/" + dir)); } catch {}
+        }
+      });
+    });
+
+    // dist/catalog.json da guncellensin (build yapilmadan da tutarli olsun)
+    const distCat = path.join(LAUNCHER_ROOT, "dist", "catalog.json");
+    if (fs.existsSync(distCat)) {
+      fs.writeFileSync(distCat, JSON.stringify(merged, null, 2) + "\n", "utf8");
+    }
+    // dist/games kapaklari
+    const distGames = path.join(LAUNCHER_ROOT, "dist", "games");
+    merged.games.forEach(g => {
+      if (!g.coverUrl || g.coverUrl.includes("placeholder")) return;
+      const src = path.join(LAUNCHER_ROOT, "public", g.coverUrl);
+      const dest = path.join(LAUNCHER_ROOT, "dist", g.coverUrl);
+      if (fs.existsSync(src) && !fs.existsSync(dest)) {
+        fs.mkdirSync(path.dirname(dest), { recursive: true });
+        fs.copyFileSync(src, dest);
+      }
+    });
+
     return merged.games.length;
   } catch (e) {
     return null;
