@@ -132,8 +132,17 @@
   function fillCategoryFilter(categories) {
     var sel = $("#catFilter");
     if (!sel) return;
+    // Sadece icinde oyun olan kategorileri goster (bos kategori kafa karistirir)
+    var games = (state.catalog && state.catalog.games) || [];
+    var used = {};
+    games.forEach(function (g) { if (g.categoryId != null) used[g.categoryId] = (used[g.categoryId] || 0) + 1; });
+    var list = (categories || []).filter(function (c) { return used[c.id] > 0; });
+    if (list.length < 2) list = categories || [];
     var opts = '<option value="">Tüm Kategoriler</option>';
-    (categories || []).forEach(function (c) { opts += '<option value="' + esc(c.id) + '">' + esc(c.name) + "</option>"; });
+    list.forEach(function (c) {
+      var n = used[c.id] || 0;
+      opts += '<option value="' + esc(c.id) + '">' + esc(c.name) + " (" + n + ")</option>";
+    });
     sel.innerHTML = opts;
   }
 
@@ -235,6 +244,9 @@
       (state.catalog.categories || []).forEach(function (c) {
         rows.push({ id: c.id, name: c.name, count: catCounts[c.id] || 0 });
       });
+      // Bos kategorileri gosterme (yalnizca oyunu olanlar)
+      var dolu = rows.filter(function (r) { return r.count > 0; });
+      if (dolu.length >= 2) rows = dolu;
       cats.innerHTML = rows.map(function (r) {
         return '<a class="cat-chip" href="#/katalog" data-cat="' + (r.id == null ? "" : r.id) + '">' +
           esc(r.name) + ' <span class="cat-chip-count">' + r.count + "</span></a>";
