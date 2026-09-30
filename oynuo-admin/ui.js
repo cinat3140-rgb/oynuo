@@ -130,33 +130,37 @@ function runMenu(rl, root, done) {
   const top = () => stack[stack.length - 1];
 
   function visible(m) {
-    return m.items.concat([{ label: null, back: true }]);
+    const extra = [];
+    // Sonuc varsa "Sonucu temizle" secenegi
+    if (m.result && m.result.lines && m.result.lines.length) extra.push({ clearResult: true });
+    return m.items.concat(extra, [{ label: null, back: true }]);
   }
 
   function draw() {
     const m = top();
     const items = visible(m);
     if (m.selected >= items.length) m.selected = items.length - 1;
+    const IW = W - 4;
     const out = [];
-    // banner
+
+    // banner + durum
     out.push(banner(root.subtitle || "ADMIN KONSOL"));
-    // breadcrumb
     if (stack.length > 1) {
       out.push("");
-      const bc = stack.map(s => DM(s.title)).join(A(" > "));
-      out.push("  " + bc);
+      out.push("  " + stack.map(s => DM(s.title)).join(A(" > ")));
     }
     out.push("");
+
     // menu kutusu
     const lines = [];
     items.forEach((it, i) => {
       const sel = i === m.selected;
-      const mark = it.back ? "  -> " : (i + 1) + ". ";
-      const body = it.back ? A("<-  Geriye don") : (it.label || "");
-      const cell = pad(mark + body, W - 6);
-      lines.push((sel ? bg(T.accent, cell) : cell));
+      let cell;
+      if (it.back) cell = pad("  >  Geriye don", W - 6);
+      else if (it.clearResult) cell = pad("  c  Sonucu temizle", W - 6);
+      else cell = pad((i + 1) + ". " + (it.label || ""), W - 6);
+      lines.push(sel ? bg(T.accent, cell) : cell);
     });
-    const IW = W - 4;
     out.push("  " + BX("+" + "-".repeat(IW) + "+"));
     if (m.title) {
       out.push("  " + BX("+") + " " + B(pad(m.title, IW - 2)) + " " + BX("+"));
@@ -164,29 +168,35 @@ function runMenu(rl, root, done) {
     }
     for (const l of lines) out.push("  " + BX("|") + " " + l + " " + BX("|"));
     out.push("  " + BX("+" + "-".repeat(IW) + "+"));
-    // sonuc (menu altinda)
-    if (m.result) {
+
+    // sonuc (menunun ALTINDA)
+    if (m.result && m.result.lines && m.result.lines.length) {
       out.push("");
-      out.push(box(m.result.title || "SONUC", m.result.lines || []).join("\n"));
+      out.push("  " + BX("+" + "-".repeat(IW) + "+"));
+      out.push("  " + BX("+") + " " + B(pad(m.result.title || "SONUC", IW - 2)) + " " + BX("+"));
+      out.push("  " + BX("+" + "=".repeat(IW) + "+"));
+      for (const l of m.result.lines) out.push("  " + BX("|") + " " + pad(String(l), IW - 2) + " " + BX("|"));
+      out.push("  " + BX("+" + "-".repeat(IW) + "+"));
     }
+
     // ipucu
     out.push("");
-    out.push("  " + DM("[ ↑/↓ ] hareket   [ Enter ] sec   [ Esc ] geri   [ 1-9 ] dogrudan"));
-    if (m.items[m.selected] && m.items[m.selected].hint && !m.items[m.selected].back) {
-      out.push("  " + DM("  " + m.items[m.selected].hint));
-    }
-    out.push("  " + DM("  oynuo - " + CFG.theme + " tema  -  " + stamp()));
-    write("\x1b[2J" + out.join("\n") + "\n");
+    out.push("  " + DM("[↑/↓] hareket  [Enter] seç  [Esc] geri  [c] cevabı sil"));
+    out.push("  " + DM("  oynuo · " + CFG.theme + " tema · " + stamp()));
+    out.push("");
+    write("\x1b[2J" + out.join("\n") + "\x1b[0J");
   }
 
-  // Metin girdisi: raw mode kapat, readline kullan, geri ac
+  // Metin girdisi: ekrani temizle, soruyu yaz, cevabi bekle
   function ask(q) {
     return new Promise(res => {
       input.removeListener("keypress", onKey);
       if (input.setRawMode) { try { input.setRawMode(false); } catch {} }
       showCursor();
-      write("\n  " + DM("  " + q + " ") + A(">") + " ");
-      rl.question("", ans => { res(String(ans).trim()); });
+      const m = top();
+      const head = ["", "  " + A("[" + CFG.theme.toUpperCase() + "]") + " " + B(q)];
+      write("\x1b[2J" + head.join("\n") + "\n");
+      rl.question("  > ", ans => { res(String(ans).trim()); });
     }).then(v => {
       if (input.setRawMode) { try { input.setRawMode(true); } catch {} }
       hideCursor();
@@ -201,7 +211,7 @@ function runMenu(rl, root, done) {
       stack.push({ title, items: items || [], selected: 0, result: sub ? { title: "BILGI", lines: sub } : null });
     },
     pop() { if (stack.length > 1) { stack.pop(); } },
-    setResult(title, lines) { top().result = { title, lines }; },
+    setResult(title, lines) { top().result = { title, lines: lines || [] }; if (typeof draw === "function") draw(); },
     clearResult() { top().result = null; },
     ask,
     quit() { finished = true; },
@@ -223,9 +233,13 @@ function runMenu(rl, root, done) {
 
     if (name === "escape") { ctx.pop(); draw(); return; }
 
+    // "c" -> sonucu temizle
+    if (str === "c" || str === "C") { top().result = null; draw(); return; }
+
     if (name === "return" || name === "enter") {
       const it = items[m.selected];
       if (it && it.back) { ctx.pop(); draw(); return; }
+      if (it && it.clearResult) { top().result = null; draw(); return; }
       if (it && it.run) {
         busy = true;
         try { await it.run(ctx, it); }
@@ -238,11 +252,10 @@ function runMenu(rl, root, done) {
 
     if (/^[0-9]$/.test(str || "")) {
       const n = Number(str) - 1;
-      if (n >= 0 && n < items.length) {
+      if (n >= 0 && n < m.items.length) {
         m.selected = n;
         draw();
-        const it = items[n];
-        if (it && it.back) { ctx.pop(); draw(); return; }
+        const it = m.items[n];
         if (it && it.run) {
           busy = true;
           try { await it.run(ctx, it); }
