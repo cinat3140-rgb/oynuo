@@ -277,14 +277,6 @@
   },
   "upcomingGames": [
     {
-      "id": "up-grand-theft-auto-vi",
-      "title": "Grand Theft Auto VI",
-      "platform": "pc",
-      "releaseDate": "2026-11-19",
-      "note": "Rockstar Games — PC sürümü hazırlanıyor",
-      "status": "coming-soon"
-    },
-    {
       "id": "up-elden-ring-nightreign",
       "title": "Elden Ring: Nightreign",
       "platform": "pc",

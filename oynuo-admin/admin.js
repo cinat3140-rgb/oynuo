@@ -95,7 +95,7 @@ const yes = s => /^e(vet)?$/i.test(String(s).trim());
 // KATEGORI SECIMI (oyun eklerken)
 function categoryMenu(cat, ctx, onPick) {
   ctx.push("KATEGORI SEC", cat.categories.map(c => ({
-    label: U.c(U.T.accent, String(c.id).padEnd(3)) + " " + U.TX(c.name.padEnd(14)) + U.D(c.slug),
+    label: U.c(U.T.accent, U.pad(String(c.id), 3)) + " " + U.TX(U.pad(c.name, 14)) + U.D(c.slug),
     run: () => { ctx.pop(); onPick(c); }
   })));
 }
@@ -112,7 +112,7 @@ function platformMenu(ctx, onPick) {
 function removeMenu(cat, ctx) {
   if (!cat.games.length) { ctx.setResult("BILGI", ["Silinecek oyun yok."]); return; }
   ctx.push("OYUN SILME - oyunu sec", cat.games.slice().sort((a, b) => a.id - b.id).map(g => ({
-    label: U.B(U.TX(U.trunc(g.title, 30).padEnd(31))) + "  " + U.D(String(catName(cat, g.categoryId)).padEnd(8) + " " + (g.platform || "pc").toUpperCase().padEnd(8)) + (gameLink(g) ? "" : U.c(U.T.warn, "[link yok]")),
+    label: U.B(U.TX(U.pad(U.trunc(g.title, 30), 31))) + "  " + U.D(String(catName(cat, g.categoryId)).padEnd(8) + " " + U.pad((g.platform || "pc").toUpperCase(), 8)) + (gameLink(g) ? "" : U.c(U.T.warn, "[link yok]")),
     run: async c2 => { await confirmDelete(cat, g, c2); }
   })));
 }
@@ -147,7 +147,7 @@ async function confirmDelete(cat, g, ctx) {
 function soonRemoveMenu(cat, ctx) {
   if (!cat.upcomingGames.length) { ctx.setResult("BILGI", ["Yakinda listesi bos."]); return; }
   ctx.push("YAKINDA SIL - oyunu sec", cat.upcomingGames.map(u => ({
-    label: U.B(U.TX(U.trunc(u.title, 32).padEnd(33))) + "  " + U.D(String(u.platform || "").toUpperCase().padEnd(8)) + U.c(U.T.ok, when(u.releaseDate)),
+    label: U.B(U.TX(U.pad(U.trunc(u.title, 32), 33))) + "  " + U.D(StringU.pad((u.platform || "").toUpperCase(), 8)) + U.c(U.T.ok, when(u.releaseDate)),
     run: async c2 => {
       c2.setResult("SILINEcek", [u.title, "Tarih: " + (u.releaseDate || "-"), "Not: " + (u.note || "-")]);
       const a = await c2.ask("Silmek icin 'e' yaz:");
@@ -242,8 +242,8 @@ function buildMenu(cat) {
       { label: U.c(U.T.warn, "x") + "  Oyun sil", run: ctx => { removeMenu(cat, ctx); } },
       { label: U.c(U.T.warn, "x") + "  Yakinda listesinden sil", run: ctx => { soonRemoveMenu(cat, ctx); } },
       { label: U.c(U.T.accent, ">") + "  Oyunlari goruntule", run: ctx => {
-          const lines = cat.games.slice().sort((a, b) => b.id - a.id).map(g => "id " + g.id + "  " + U.trunc(g.title, 26).padEnd(27) + "  " + U.D((g.platform || "pc").toUpperCase() + "  v" + ((g.stats || {}).views || 0) + " d" + ((g.stats || {}).downloads || 0)));
-          const sl = cat.upcomingGames.map(u => U.c(U.T.warn, "○") + " " + U.trunc(u.title, 30).padEnd(31) + "  " + U.D(when(u.releaseDate)));
+          const lines = cat.games.slice().sort((a, b) => b.id - a.id).map(g => "id " + g.id + "  " + U.pad(U.trunc(g.title, 26), 27) + "  " + U.D((g.platform || "pc").toUpperCase() + "  v" + ((g.stats || {}).views || 0) + " d" + ((g.stats || {}).downloads || 0)));
+          const sl = cat.upcomingGames.map(u => U.c(U.T.warn, "○") + " " + U.pad(U.trunc(u.title, 30), 31) + "  " + U.D(when(u.releaseDate)));
           ctx.setResult("OYUN LISTESI", [...(lines.length ? lines : ["(oyun yok)"]), "", U.B("YAKINDA:"), ...(sl.length ? sl : ["(yok)"])]);
         } },
       { label: U.c(U.T.accent, "*") + "  Yakinda oyun ekle", run: ctx => {
@@ -355,10 +355,10 @@ async function cli() {
     U.clear();
     U.write("\n" + U.banner(cat.games.length + " OYUN  |  " + cat.upcomingGames.length + " YAKINDA") + "\n\n");
     U.write(U.box("OYUNLAR (" + cat.games.length + ")", cat.games.slice().sort((a, b) => a.id - b.id).map(g =>
-      "id " + String(g.id).padEnd(4) + U.trunc(g.title, 28).padEnd(29) + U.D((g.platform || "pc").toUpperCase().padEnd(8)) + "v" + ((g.stats || {}).views || 0) + " d" + ((g.stats || {}).downloads || 0) + (gameLink(g) ? "" : U.c(U.T.warn, " [link yok]"))
+      "id " + U.pad(String(g.id), 4) + U.pad(U.trunc(g.title, 28), 29) + U.D(U.pad((g.platform || "pc").toUpperCase(), 8)) + "v" + ((g.stats || {}).views || 0) + " d" + ((g.stats || {}).downloads || 0) + (gameLink(g) ? "" : U.c(U.T.warn, " [link yok]"))
     )).join("\n") + "\n\n");
     U.write(U.box("YAKINDA (" + cat.upcomingGames.length + ")", cat.upcomingGames.map(u =>
-      U.trunc(u.title, 30).padEnd(31) + U.D((u.platform || "").toUpperCase().padEnd(8)) + when(u.releaseDate)
+      U.pad(U.trunc(u.title, 30), 31) + U.D(U.pad((u.platform || "").toUpperCase(), 8)) + when(u.releaseDate)
     )).join("\n") + "\n\n");
     rl.close();
     return;

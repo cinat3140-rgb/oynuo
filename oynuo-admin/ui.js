@@ -48,7 +48,13 @@ const WIDE = /[\u1100-\u115F\u2E80-\uA4CF\uAC00-\uD7A3\uF900-\uFAFF\uFE30-\uFE6F
 const EMOJI = /[\u{1F000}-\u{1FAFF}\u{2190}-\u{21FF}\u{2300}-\u{23FF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}\u{20E3}]/u;
 function width(s) { let n = 0; for (const ch of stripAnsi(s)) n += (WIDE.test(ch) || EMOJI.test(ch)) ? 2 : 1; return n; }
 const pad = (s, n) => s + " ".repeat(Math.max(0, n - width(s)));
-const trunc = (s, n) => { const t = stripAnsi(s); return width(t) <= n ? t : t.slice(0, Math.max(1, n - 1)) + "~"; };
+// ANSI'siz metni kirpar (kirpma sonrasi ANSI kirilir)
+const trunc = (s, n) => {
+  const t = stripAnsi(s);
+  if (width(t) <= n) return String(s);
+  // kirp sonrasi ANSI kodlari kalirsa temizle
+  return t.slice(0, Math.max(1, n - 1)) + "~";
+};
 
 /* ---------------- buyuk banner ---------------- */
 const F = {
