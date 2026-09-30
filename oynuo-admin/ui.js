@@ -139,6 +139,8 @@ function runMenu(rl, root, done) {
     const extra = [];
     // Sonuc varsa "Sonucu temizle" secenegi
     if (m.result && m.result.lines && m.result.lines.length) extra.push({ clearResult: true });
+    // Geri al varsa
+    if (m.undo && m.undo.length) extra.push({ undo: true });
     return m.items.concat(extra, [{ label: null, back: true }]);
   }
 
@@ -164,7 +166,11 @@ function runMenu(rl, root, done) {
       let cell;
       if (it.back) cell = pad("  >  Geriye don", W - 6);
       else if (it.clearResult) cell = pad("  c  Sonucu temizle", W - 6);
-      else cell = pad((i + 1) + ". " + (it.label || ""), W - 6);
+      else if (it.undo) cell = pad("  z  Geri al: " + (m.undo[m.undo.length - 1].label || "son islem"), W - 6);
+      else {
+        const mark = (m.checked && m.checked[it.key]) ? "[x] " : "";
+        cell = pad((i + 1) + ". " + mark + (it.label || ""), W - 6);
+      }
       lines.push(sel ? bg(T.accent, cell) : cell);
     });
     out.push("  " + BX("+" + "-".repeat(IW) + "+"));
@@ -185,9 +191,21 @@ function runMenu(rl, root, done) {
       out.push("  " + BX("+" + "-".repeat(IW) + "+"));
     }
 
+    // coklu secim ozeti
+    if (m.checked) {
+      const cnt = Object.values(m.checked).filter(Boolean).length;
+      if (cnt > 0) {
+        out.push("");
+        out.push("  " + A("[" + cnt + " oyun secildi]") + " " + DM("Space ile sec  •  a ile tumunu sec  •  n ile secimi kaldir  •  X ile secilenleri sil"));
+      }
+    }
+
     // ipucu
     out.push("");
-    out.push("  " + DM("[↑/↓] hareket  [Enter] seç  [Esc] geri  [c] cevabı sil"));
+    const keys = ["[↑/↓] hareket", "[Enter] seç", "[Esc] geri", "[c] cevabı sil"];
+    if (m.checked) keys.push("[Space] işaretle", "[a] tümü", "[n] hiçbiri");
+    if (m.undo && m.undo.length) keys.push("[z] geri al");
+    out.push("  " + DM(keys.join("  •  ")));
     out.push("  " + DM("  oynuo · " + CFG.theme + " tema · " + stamp()));
     out.push("");
     write("\x1b[2J" + out.join("\n") + "\x1b[0J");
@@ -218,6 +236,16 @@ function runMenu(rl, root, done) {
     },
     pop() { if (stack.length > 1) { stack.pop(); } },
     setResult(title, lines) { top().result = { title, lines: lines || [] }; if (typeof draw === "function") draw(); },
+    checked() { return top().checked || {}; },
+    pushUndo(entry) { const m = top(); if (!m.undo) m.undo = []; m.undo.push(entry); },
+    undo() {
+      const m = top();
+      if (!m.undo || !m.undo.length) return;
+      const e = m.undo.pop();
+      try { e.restore(ctx); this.setResult("GERI ALINDI", [e.label + " geri alindi."]); }
+      catch (err) { this.setResult("HATA", [String(err.message || err)]); }
+      if (typeof draw === "function") draw();
+    },
     clearResult() { top().result = null; },
     ask,
     quit() { finished = true; },
@@ -226,6 +254,8 @@ function runMenu(rl, root, done) {
   };
 
   let busy = false;
+  let numBuffer = "";
+  let numTimer = null;
   async function onKey(str, key) {
     if (finished || busy) return;
     const name = key && key.name ? key.name : "";
@@ -242,10 +272,49 @@ function runMenu(rl, root, done) {
     // "c" -> sonucu temizle
     if (str === "c" || str === "C") { top().result = null; draw(); return; }
 
+    // Space -> coklu secim isareti
+    if (name === "space") {
+      const it = m.items[m.selected];
+      if (it && it.key) {
+        if (!m.checked) m.checked = {};
+        m.checked[it.key] = !m.checked[it.key];
+        m.selected = (m.selected + 1) % m.items.length;
+        draw();
+      }
+      return;
+    }
+    // "a" -> tumunu sec
+    if (str === "a" && m.checked) {
+      const keys = m.items.filter(x => x.key).map(x => x.key);
+      const all = keys.every(k => m.checked[k]);
+      m.checked = {};
+      if (!all) keys.forEach(k => (m.checked[k] = true));
+      draw();
+      return;
+    }
+    // "n" -> secimi kaldir
+    if (str === "n" && m.checked) { m.checked = {}; draw(); return; }
+    // "X" -> secilenleri toplu isle
+    if ((str === "X" || str === "x") && m.checked && m.multiDelete) {
+      const sel = m.items.filter(x => x.key && m.checked[x.key]);
+      if (!sel.length) { top().result = { title: "BILGI", lines: ["Once Space ile oyun sec."] }; draw(); return; }
+      m.multiDelete(ctx, sel);
+      return;
+    }
+    // "z" -> geri al
+    if (str === "z" && m.undo && m.undo.length) {
+      const u = m.undo.pop();
+      try { u.restore(ctx); ctx.setResult("GERI ALINDI", [u.label + " geri alindi."]); }
+      catch (e) { ctx.setResult("HATA", [String(e.message || e)]); }
+      draw();
+      return;
+    }
+
     if (name === "return" || name === "enter") {
       const it = items[m.selected];
       if (it && it.back) { ctx.pop(); draw(); return; }
       if (it && it.clearResult) { top().result = null; draw(); return; }
+      if (it && it.undo) { ctx.undo(); return; }
       if (it && it.run) {
         busy = true;
         try { await it.run(ctx, it); }
@@ -256,8 +325,26 @@ function runMenu(rl, root, done) {
       return;
     }
 
+    // Rakam ile dogrudan secim (cok haneli destekli: 1, 5, 12, 15)
     if (/^[0-9]$/.test(str || "")) {
-      const n = Number(str) - 1;
+      clearTimeout(numTimer);
+      const n1 = parseInt(numBuffer + str, 10) - 1;
+      // Eger iki haneli bir secim mumkunse, once bekleyip ikinci haneyi dene
+      const canBePrefix = numBuffer === "" && m.items.length >= 10 && /^[1-9]$/.test(str);
+      if (canBePrefix) {
+        numBuffer = str;
+        numTimer = setTimeout(() => {
+          numBuffer = "";
+          m.selected = n1;
+          draw();
+          const it = m.items[n1];
+          if (it && it.run) { busy = true; Promise.resolve(it.run(ctx, it)).finally(() => { busy = false; if (!finished) draw(); }); }
+        }, 500);
+        return;
+      }
+      numBuffer = numBuffer + str;
+      const n = parseInt(numBuffer, 10) - 1;
+      numBuffer = "";
       if (n >= 0 && n < m.items.length) {
         m.selected = n;
         draw();
@@ -270,6 +357,7 @@ function runMenu(rl, root, done) {
           if (!finished) draw();
         }
       }
+      return;
     }
   }
 

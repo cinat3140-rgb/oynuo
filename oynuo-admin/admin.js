@@ -232,6 +232,211 @@ async function doAdd(cat, o) {
   return g;
 }
 
+
+/* ==================== YENI: OYUN DUZENLEME ==================== */
+function editMenu(cat, ctx) {
+  if (!cat.games.length) { ctx.setResult("BILGI", ["Duzenlenecek oyun yok."]); return; }
+  ctx.push("OYUN DUZENLE - oyunu sec", cat.games.slice().sort((a, b) => a.id - b.id).map(g => ({
+    key: g.id,
+    label: U.B(U.TX(U.pad(U.trunc(g.title, 28), 29))) + "  " + U.D(U.pad(String(catName(cat, g.categoryId)), 8) + " " + U.pad((g.platform || "pc").toUpperCase(), 7) + " " + U.pad(String(g.id), 5)),
+    run: async c2 => {
+      const backup = JSON.parse(JSON.stringify(g));
+      c2.push("DUZENLE: " + U.trunc(g.title, 40), [
+        { label: "Ad degistir", run: async c3 => { const v = await c3.ask("Yeni oyun adi:"); if (v) g.title = v; c3.setResult("GUNCELLENDI", ["Ad: " + g.title]); c3.pop(); } },
+        { label: "Kategori degistir", run: c3 => { categoryMenu(cat, c3, cc => { g.categoryId = cc.id; g.category = cc.slug; c3.setResult("GUNCELLENDI", ["Kategori: " + cc.name]); c3.pop(); }); } },
+        { label: "Platform degistir", run: c3 => { platformMenu(c3, p => { g.platform = p.key; c3.setResult("GUNCELLENDI", ["Platform: " + p.badge]); c3.pop(); }); } },
+        { label: "Indirme linki degistir", run: async c3 => {
+            const v = await c3.ask("Yeni link (bos = 'yakinda' yap):");
+            g.latestFiles = [];
+            g.apk = null; g.torrent = null;
+            if (v) {
+              if (g.platform === "torrent") {
+                const m = v.startsWith("magnet:");
+                g.torrent = { magnetUrl: m ? v : "", torrentUrl: m ? "" : v };
+              } else if (g.platform === "apk") {
+                g.apk = { url: v };
+              } else {
+                g.latestFiles.push({ id: g.id, versionId: g.id, source: "external", kind: "file", fileName: g.title, fileSize: (g.latestFiles[0] || {}).fileSize || 0, sha256: "", executablePath: "", downloadUrl: v });
+              }
+            }
+            c3.setResult("GUNCELLENDI", ["Link: " + (v || "(yok - yakinda)")]); c3.pop();
+          } },
+        { label: "Aciklama / gelistirici duzenle", run: async c3 => {
+            const d = await c3.ask("Aciklama (bos = degistirme):");
+            if (d) g.description = d;
+            const dv = await c3.ask("Gelistirici (bos = degistirme):");
+            if (dv) g.developer = dv;
+            c3.setResult("GUNCELLENDI", ["Metin alanlari guncellendi."]); c3.pop();
+          } },
+        { label: "One cikan isarele / kaldir", run: c3 => { g.isFeatured = !g.isFeatured; c3.setResult("GUNCELLENDI", ["One cikan: " + (g.isFeatured ? "evet" : "hayir")]); c3.pop(); } },
+        { label: "KAYDET ve GitHub'a gonder", run: async c3 => {
+            const res = await pushGit(cat, "Oyun guncellendi: " + g.title + " (admin araci)", true);
+            c3.pushUndo({ label: "Duzenleme: " + g.title, restore: async () => { Object.assign(g, backup); await pushGit(cat, "Geri alindi: " + g.title, true); } });
+            c3.setResult("KAYDEDILDI: " + g.title, [...res, "Geri almak icin ana menude 'z' tusuna bas."]);
+            c3.pop(); c3.pop();
+          } }
+      ]);
+    }
+  })));
+}
+
+/* ==================== YENI: TOPLU SIL ==================== */
+function bulkMenu(cat, ctx) {
+  if (!cat.games.length) { ctx.setResult("BILGI", ["Silinecek oyun yok."]); return; }
+  const backups = [];
+  ctx.push("TOPLU SIL - Space ile sec, X ile sil", cat.games.slice().sort((a, b) => a.id - b.id).map(g => ({
+    key: g.id,
+    label: U.B(U.TX(U.pad(U.trunc(g.title, 28), 29))) + "  " + U.D(U.pad(String(catName(cat, g.categoryId)), 8) + " " + U.pad((g.platform || "pc").toUpperCase(), 7) + "id " + g.id),
+    run: async c2 => {
+      // tek oyun sil (dogrudan bu menuden)
+      const backup = JSON.parse(JSON.stringify(g));
+      const a = await c2.ask('"' + U.trunc(g.title, 24) + '" silinsin mi? (e):');
+      if (!yes(a)) { c2.setResult("IPTAL", []); return; }
+      cat.games = cat.games.filter(x => x.id !== g.id);
+      await pushGit(cat, "Oyun silindi: " + g.title + " (admin araci)", true);
+      backups.push({ game: backup, cat });
+      c2.pushUndo({ label: "Silme: " + g.title, restore: async cx => { cat.games.push(backup); cat.games.sort((a, b) => b.id - a.id); await pushGit(cat, "Geri alindi: " + backup.title, true); } });
+      c2.setResult("SILINDI", [g.title, "Geri almak icin 'z' tusuna bas."]);
+    }
+  })));
+  ctx.multiDelete = async (c2, sel) => {
+    const a = await c2.ask(sel.length + " oyun silinecek. Emin misin? (e):");
+    if (!yes(a)) { c2.setResult("IPTAL", []); return; }
+    const removed = [];
+    for (const it of sel) {
+      const g = cat.games.find(x => x.id === it.key);
+      if (g) { removed.push(JSON.parse(JSON.stringify(g))); }
+    }
+    const ids = new Set(removed.map(g => g.id));
+    cat.games = cat.games.filter(g => !ids.has(g.id));
+    const res = await pushGit(cat, "Toplu silindi: " + removed.length + " oyun (admin araci)", true);
+    c2.pushUndo({ label: removed.length + " oyun silme", restore: async cx => { removed.forEach(g => cat.games.push(g)); cat.games.sort((a, b) => b.id - a.id); await pushGit(cat, "Geri alindi: " + removed.length + " oyun", true); } });
+    c2.setResult("TOPLU SILINDI: " + removed.length + " oyun", [...res, "Geri almak icin 'z' tusuna bas."]);
+    c2.pop();
+  };
+}
+
+/* ==================== YENI: ISTATISTIK ==================== */
+function statsScreen(cat, ctx) {
+  const games = cat.games;
+  const byPlatform = {};
+  const byCategory = {};
+  let views = 0, dls = 0, withLink = 0, withoutLink = 0, withCover = 0, featured = 0, totalSize = 0;
+  games.forEach(g => {
+    const p = g.platform || "pc";
+    byPlatform[p] = (byPlatform[p] || 0) + 1;
+    const cn = catName(cat, g.categoryId);
+    byCategory[cn] = (byCategory[cn] || 0) + 1;
+    const st = g.stats || {};
+    views += st.views || 0;
+    dls += st.downloads || 0;
+    if (gameLink(g)) withLink++; else withoutLink++;
+    if (g.coverUrl && !g.coverUrl.includes("placeholder")) withCover++;
+    if (g.isFeatured) featured++;
+    const f = (g.latestFiles || []).find(x => x.fileSize > 0);
+    if (f) totalSize += f.fileSize;
+  });
+  const lines = [
+    "TOPLAM OYUN            : " + games.length,
+    "  PC oyunu            : " + (byPlatform.pc || 0),
+    "  Torrent oyunu       : " + (byPlatform.torrent || 0),
+    "  APK oyunu           : " + (byPlatform.apk || 0),
+    "YAKINDA LISTESI       : " + cat.upcomingGames.length,
+    "KATEGORI SAYISI       : " + cat.categories.length,
+    "",
+    "TOPLAM GORUNTULENME   : " + views.toLocaleString("tr-TR"),
+    "TOPLAM INDIRME        : " + dls.toLocaleString("tr-TR"),
+    "",
+    "BAGLANTISI OLAN       : " + withLink + (withoutLink ? "   (bagsiz: " + withoutLink + ")" : ""),
+    "KAPAK GORSELI OLAN    : " + withCover,
+    "ONE CIKAN OYUN        : " + featured,
+    "TOPLAM OYUN BOYUTU    : " + (totalSize / 1073741824).toFixed(2) + " GB",
+    "",
+    "KATEGORI DAGILIMI:"
+  ];
+  Object.entries(byCategory).sort((a, b) => b[1] - a[1]).forEach(([k, v]) => lines.push("   " + U.pad(k, 20) + v));
+  ctx.setResult("ISTATISTIKLER", lines);
+}
+
+/* ==================== YENI: YEDEKLEME ==================== */
+const BACKUP_DIR = path.join(__dirname, "backups");
+function backupMenu(cat, ctx) {
+  if (!fs.existsSync(BACKUP_DIR)) fs.mkdirSync(BACKUP_DIR, { recursive: true });
+  const files = fs.readdirSync(BACKUP_DIR).filter(f => f.endsWith(".json")).sort().reverse();
+  const items = [
+    { label: "Yeni yedek al (simdi)", run: async c2 => {
+        const name = "catalog-" + new Date().toISOString().replace(/[:.]/g, "-") + ".json";
+        fs.copyFileSync(CATALOG, path.join(BACKUP_DIR, name));
+        c2.setResult("YEDEK ALINDI", [name, "Klasor: oynuo-admin/backups/"]);
+        c2.pop();
+      } }
+  ];
+  if (files.length) {
+    items.push({ label: "--- Yedeklerden geri yukle ---", run: async c2 => {
+        c2.push("YEDEK SEC", files.map(f => ({
+          label: U.pad(f, 50),
+          run: async c3 => {
+            const a = await c3.ask("Bu yedek yuklenecek. Emin misin? (e):");
+            if (!yes(a)) { c3.setResult("IPTAL", []); return; }
+            const cur = fs.readFileSync(CATALOG, "utf8");
+            const backupName = "catalog-geri-" + new Date().toISOString().replace(/[:.]/g, "-") + ".json";
+            fs.copyFileSync(CATALOG, path.join(BACKUP_DIR, backupName));
+            fs.copyFileSync(path.join(BACKUP_DIR, f), CATALOG);
+            const newCat = read();
+            const res = await pushGit(newCat, "Yedek geri yuklendi: " + f + " (admin araci)", true);
+            c3.setResult("GERI YUKLENDI: " + f, [...res, "Eski hal: " + backupName]);
+            c3.pop(); c3.pop();
+          }
+        })));
+      } });
+    items.push({ label: "Yedek sayisi: " + files.length, run: c2 => { c2.pop(); } });
+  }
+  ctx.push("YEDEKLEME", items);
+}
+
+/* ==================== YENI: TOPLU IMPORT ==================== */
+function importMenu(cat, ctx) {
+  ctx.push("TOPLU OYUN EKLEME", [
+    { label: "Format: ad | platform | link | kategori", run: c2 => {
+        c2.setResult("FORMAT", [
+          "Her satira bir oyun, '|' ile ayir:",
+          "",
+          "  Cyberpunk 2077 | pc | https://... | action",
+          "  GTA VI | torrent | magnet:?xt=... | open-world",
+          "",
+          "kategori bos birakilirsa varsayilan (Action) kullanilir."
+        ]);
+        c2.pop();
+      } },
+    { label: "Listeyi yapistir ve ekle", run: async c2 => {
+        const txt = await c2.ask("Oyunlari yapistir (her satir bir oyun), sonra bos satir + Enter:");
+        if (!txt) { c2.setResult("IPTAL", []); return; }
+        const lines = txt.split(/\r?\n/).filter(l => l.trim() && !l.trim().startsWith("#"));
+        let added = 0, skipped = 0;
+        for (const line of lines) {
+          const parts = line.split("|").map(s => s.trim());
+          const title = parts[0];
+          if (!title) { skipped++; continue; }
+          const plat = PLATFORMS.find(p => p.key === (parts[1] || "pc").toLowerCase()) || PLATFORMS[0];
+          const link = parts[2] || "";
+          const cat = findCat(cat, parts[3]) || cat.categories[0];
+          if (cat.games.some(g => g.title.toLowerCase() === title.toLowerCase())) { skipped++; continue; }
+          const g = await doAdd(cat, { title, platform: plat, category: cat, link, version: "1.0.0" });
+          added++;
+        }
+        const res = await pushGit(cat, "Toplu import: " + added + " oyun eklendi (admin araci)", true);
+        c2.setResult("IMPORT TAMAMLANDI", ["Eklendi: " + added, "Atlandi: " + skipped, ...res]);
+        c2.pop(); c2.pop();
+      } }
+  ]);
+}
+
+function findCat(c, q) {
+  const s = String(q || "").trim().toLowerCase();
+  if (!s) return c.categories[0];
+  return c.categories.find(x => String(x.id) === s || x.slug.toLowerCase() === s || x.name.toLowerCase() === s) || null;
+}
+
 /* ==================== ANA MENU ==================== */
 function buildMenu(cat) {
   return {
@@ -239,6 +444,11 @@ function buildMenu(cat) {
     subtitle: cat.games.length + " OYUN  |  " + cat.upcomingGames.length + " YAKINDA  |  " + U.CFG.theme.toUpperCase() + " TEMA",
     items: [
       { label: U.c(U.T.ok, ">>") + "  Yeni oyun ekle", run: async ctx => { await addFlow(cat, ctx); } },
+      { label: U.c(U.T.accent, "*") + "  Toplu oyun ekleme (liste)", run: ctx => { importMenu(cat, ctx); } },
+      { label: U.c(U.T.accent, "~") + "  Oyun duzenle", run: ctx => { editMenu(cat, ctx); } },
+      { label: U.c(U.T.warn, "!") + "  Toplu islem (coklu sec)", run: ctx => { bulkMenu(cat, ctx); } },
+      { label: U.c(U.T.accent, "#") + "  Istatistikler", run: ctx => { statsScreen(cat, ctx); } },
+      { label: U.c(U.T.box, "=") + "  Yedekleme / geri yukleme", run: ctx => { backupMenu(cat, ctx); } },
       { label: U.c(U.T.warn, "x") + "  Oyun sil", run: ctx => { removeMenu(cat, ctx); } },
       { label: U.c(U.T.warn, "x") + "  Yakinda listesinden sil", run: ctx => { soonRemoveMenu(cat, ctx); } },
       { label: U.c(U.T.accent, ">") + "  Oyunlari goruntule", run: ctx => {
@@ -378,6 +588,98 @@ async function cli() {
       (r.ok && r.games === cat.games.length) ? "sonuc : ESIT" : "sonuc : FARK VAR (push bekliyor)"
     ]).join("\n") + "\n\n");
     rl.close();
+    return;
+  }
+
+  if (cmd === "stats" || cmd === "stat") {
+    const cat = read();
+    U.clear();
+    U.write("\n" + U.banner("ISTATISTIK") + "\n\n");
+    const lines = [];
+    const byPlatform = {};
+    let views = 0, dls = 0, withLink = 0, withoutLink = 0, featured = 0, totalSize = 0;
+    const byCategory = {};
+    cat.games.forEach(g => {
+      const p = g.platform || "pc";
+      byPlatform[p] = (byPlatform[p] || 0) + 1;
+      const cn = catName(cat, g.categoryId);
+      byCategory[cn] = (byCategory[cn] || 0) + 1;
+      const st = g.stats || {};
+      views += st.views || 0; dls += st.downloads || 0;
+      if (gameLink(g)) withLink++; else withoutLink++;
+      if (g.isFeatured) featured++;
+      const f = (g.latestFiles || []).find(x => x.fileSize > 0);
+      if (f) totalSize += f.fileSize;
+    });
+    lines.push("TOPLAM OYUN          : " + cat.games.length);
+    lines.push("  PC / Torrent / APK : " + (byPlatform.pc || 0) + " / " + (byPlatform.torrent || 0) + " / " + (byPlatform.apk || 0));
+    lines.push("YAKINDA LISTESI     : " + cat.upcomingGames.length);
+    lines.push("KATEGORI            : " + cat.categories.length);
+    lines.push("");
+    lines.push("GORUNTULENME        : " + views.toLocaleString("tr-TR"));
+    lines.push("INDIRME             : " + dls.toLocaleString("tr-TR"));
+    lines.push("BAGLANTILI OYUN     : " + withLink + (withoutLink ? "  (bagsiz: " + withoutLink + ")" : ""));
+    lines.push("ONE CIKAN           : " + featured);
+    lines.push("TOPLAM BOYUT        : " + (totalSize / 1073741824).toFixed(2) + " GB");
+    U.write(U.box("KATALOG", lines).join("\n") + "\n\n");
+    rl.close();
+    return;
+  }
+
+  if (cmd === "edit") {
+    const cat = read();
+    const id = parseInt(f.id || f._, 10);
+    if (!id) { out(U.c(U.T.err, "Hata: id gerekli") + "\n  " + U.D("ornek: node admin.js edit 6 --title \"Yeni Ad\"")); return; }
+    const g = cat.games.find(x => x.id === id);
+    if (!g) { out(U.c(U.T.err, "Oyun bulunamadi: " + id)); return; }
+    const backup = JSON.parse(JSON.stringify(g));
+    if (f.title || f.t) g.title = f.title || f.t;
+    if (f.link || f.l) {
+      g.latestFiles = []; g.apk = null; g.torrent = null;
+      const link = f.link || f.l;
+      if (g.platform === "torrent") { const m = link.startsWith("magnet:"); g.torrent = { magnetUrl: m ? link : "", torrentUrl: m ? "" : link }; }
+      else if (g.platform === "apk") g.apk = { url: link };
+      else g.latestFiles.push({ id: g.id, versionId: g.id, source: "external", kind: "file", fileName: g.title, fileSize: f.size ? parseSize(f.size) : 0, sha256: "", executablePath: "", downloadUrl: link });
+    }
+    if (f.featured === "1") g.isFeatured = true;
+    if (f.featured === "0") g.isFeatured = false;
+    if (f.dev) g.developer = f.dev;
+    if (f.desc) g.description = f.desc;
+    if (f.cat || f.category) { const cc = findCat(cat, f.cat || f.category); if (cc) { g.categoryId = cc.id; g.category = cc.slug; } }
+    const res = await pushGit(cat, "Oyun guncellendi: " + g.title + " (admin araci)", f["no-push"] !== "1");
+    out(U.B("GUNCELLENDI: " + g.title) + "\n" + res.map(r => U.D("  " + r)).join("\n") + "\n  " + U.c(U.T.accent, gameUrl(g.id)));
+    void backup;
+    return;
+  }
+
+  if (cmd === "backup") {
+    const bdir = path.join(__dirname, "backups");
+    if (!fs.existsSync(bdir)) fs.mkdirSync(bdir, { recursive: true });
+    const name = "catalog-" + new Date().toISOString().replace(/[:.]/g, "-") + ".json";
+    fs.copyFileSync(CATALOG, path.join(bdir, name));
+    const files = fs.readdirSync(bdir).filter(x => x.endsWith(".json"));
+    out(U.B("YEDEK ALINDI") + "\n  " + U.D(name) + "\n  " + U.D("toplam yedek: " + files.length));
+    return;
+  }
+
+  if (cmd === "import") {
+    const cat = read();
+    const file = f.file || f._;
+    if (!file) { out(U.c(U.T.err, "Hata: dosya gerekli") + "\n  " + U.D("ornek: node admin.js import --file oyunlar.txt")); return; }
+    if (!fs.existsSync(file)) { out(U.c(U.T.err, "Dosya yok: " + file)); return; }
+    const lines = fs.readFileSync(file, "utf8").split(/\r?\n/).filter(l => l.trim() && !l.trim().startsWith("#"));
+    let added = 0, skipped = 0;
+    for (const line of lines) {
+      const p = line.split("|").map(s => s.trim());
+      const title = p[0]; if (!title) { skipped++; continue; }
+      if (cat.games.some(g => g.title.toLowerCase() === title.toLowerCase())) { skipped++; continue; }
+      const plat = PLATFORMS.find(x => x.key === (p[1] || "pc").toLowerCase()) || PLATFORMS[0];
+      const catg = findCat(cat, p[3]) || cat.categories[0];
+      await doAdd(cat, { title, platform: plat, category: catg, link: p[2] || "", version: "1.0.0" });
+      added++;
+    }
+    const res = await pushGit(cat, "Toplu import: " + added + " oyun (admin araci)", f["no-push"] !== "1");
+    out(U.B("IMPORT: " + added + " eklendi, " + skipped + " atlandi") + "\n" + res.map(r => U.D("  " + r)).join("\n"));
     return;
   }
 
