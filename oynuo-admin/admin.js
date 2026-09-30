@@ -112,7 +112,7 @@ function platformMenu(ctx, onPick) {
 function removeMenu(cat, ctx) {
   if (!cat.games.length) { ctx.setResult("BILGI", ["Silinecek oyun yok."]); return; }
   ctx.push("OYUN SILME - oyunu sec", cat.games.slice().sort((a, b) => a.id - b.id).map(g => ({
-    label: U.B(U.TX(U.pad(U.trunc(g.title, 30), 31))) + "  " + U.D(String(catName(cat, g.categoryId)).padEnd(8) + " " + U.pad((g.platform || "pc").toUpperCase(), 8)) + (gameLink(g) ? "" : U.c(U.T.warn, "[link yok]")),
+    label: U.B(U.TX(U.pad(U.trunc(g.title, 30), 31))) + "  " + U.D(U.pad(String(catName(cat, g.categoryId)), 8) + " " + U.pad((g.platform || "pc").toUpperCase(), 8)) + (gameLink(g) ? "" : U.c(U.T.warn, "[link yok]")),
     run: async c2 => { await confirmDelete(cat, g, c2); }
   })));
 }

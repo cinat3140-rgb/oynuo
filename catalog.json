@@ -277,14 +277,6 @@
   },
   "upcomingGames": [
     {
-      "id": "up-elden-ring-nightreign",
-      "title": "Elden Ring: Nightreign",
-      "platform": "pc",
-      "releaseDate": "2026-10-16",
-      "note": "FromSoftware — co-op action RPG",
-      "status": "coming-soon"
-    },
-    {
       "id": "up-cyberpunk-2077-phantom-liberty",
       "title": "Cyberpunk 2077: Phantom Liberty",
       "platform": "pc",
