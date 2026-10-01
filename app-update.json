@@ -5,7 +5,7 @@
     "notes": "Oynuo PC 1.4.5: PC uygulamasinda artik yalnizca gercek PC oyunlari var (sahte APK listesi kaldirildi). Oyun kapak gorelleri uygulama icine gomuldu ve duzgun yukleniyor. Gercek indirme/goruntulenme sayaclari backend uzerinden canli guncelleniyor. Demo oyun dosyalari kaldirildi.",
     "downloadUrl": "downloads/Oynuo_1.4.5_x64-setup.exe",
     "portableUrl": "downloads/Oynuo_PC_1.4.5_portable.exe",
-    "sha256": "B8742FD94DA06EE10A503271CB13DB3FECC94535EAE8ED2AAD26F0E0385FF0C2",
-    "portableSha256": "FFFFD6DFB58C33D965E15CE859FA314175FCB460834AEC189282A6B8FCD866DF"
+    "sha256": "A429AA815B8A4C64A2F8091F956F80BEA69D85464E907A1280F19448085F969F",
+    "portableSha256": "2EB35F7BEED51BF971EC87483A0F627C31CCD7F30F6EDDE15C03C9DBE3769940"
   }
 }

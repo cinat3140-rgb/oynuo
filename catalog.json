@@ -226,13 +226,15 @@
     }
   ],
   "appUpdate": {
-    "version": "0.0.2",
-    "notes": "Oyun Ekle sayfasına 'Dosya ile (sunucuya yükle)' modu eklendi: indirme kaynağı seçimi (Link ile / Dosya ile) yapılabilir. Dosya modunda arşiv seçilir, SHA-256 otomatik hesaplanır, çalıştırma dosyası (exe) belirtilir.",
-    "downloadUrl": "downloads/Oynuo_PC_0.0.2_x64-setup.exe",
-    "portableUrl": "downloads/Oynuo_PC_0.0.2_portable.exe",
-    "sha256": "B883DB38F0D615749C70785AA6C8F272AC6668FF434DBE31A20028EDCD67C3FC",
-    "portableSha256": "8603A54A8002474D4D216DEE95193716A63650DA2D0213F8E6DCBAA32555A908",
-    "upToDate": false
+    "updateAvailable": true,
+    "latest": {
+      "version": "1.4.5",
+      "notes": "Oynuo PC 1.4.5: buyuk dosya (parcali) indirme sistemi, hizli 8 baglantili indirici, online bulut katalogu. Admin'den eklenen oyunlar (link / torrent / parcali dosya) site ve uygulamada aninda gorunur.",
+      "downloadUrl": "downloads/Oynuo_1.4.5_x64-setup.exe",
+      "portableUrl": "downloads/Oynuo_PC_1.4.5_portable.exe",
+      "sha256": "B8742FD94DA06EE10A503271CB13DB3FECC94535EAE8ED2AAD26F0E0385FF0C2",
+      "portableSha256": "FFFFD6DFB58C33D965E15CE859FA314175FCB460834AEC189282A6B8FCD866DF"
+    }
   },
   "upcomingGames": [
     {
