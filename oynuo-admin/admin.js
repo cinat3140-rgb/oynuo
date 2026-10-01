@@ -205,6 +205,16 @@ async function confirmDelete(cat, g, ctx) {
   cat.games = cat.games.filter(x => x.id !== g.id);
   const cd = path.join(ROOT, "games", String(g.id));
   if (fs.existsSync(cd)) { try { fs.rmSync(cd, { recursive: true, force: true }); } catch {} }
+  // parcali buyuk dosya parcalarini da temizle (disk dolmasin)
+  if (g.chunked && g.chunked.baseUrl) {
+    const cd2 = path.join(ROOT, String(g.chunked.baseUrl).split("/").join(path.sep));
+    if (fs.existsSync(cd2)) {
+      try {
+        fs.rmSync(cd2, { recursive: true, force: true });
+        U.ok("parcalar silindi: " + (g.chunked.chunkCount || 0) + " parça");
+      } catch {}
+    }
+  }
   const res = await pushGit(cat, "Oyun silindi: " + g.title + " (admin araci)", true);
   ctx.setResult("SILINDI: " + g.title, res);
   ctx.pop(); // silme listesinden cik
@@ -843,8 +853,33 @@ function splitFile(src) {
   fs.closeSync(fd);
   process.stdout.write("\n");
 
+  // Dogrulama: parca sayisi ve toplam boyut
+  const partList = [];
+  let partTotal = 0;
+  for (let i = 1; i <= idx; i++) {
+    const pp = path.join(dir, "part-" + String(i).padStart(3, "0") + ".bin");
+    const ps = fs.existsSync(pp) ? fs.statSync(pp).size : 0;
+    partList.push({ n: i, size: ps });
+    partTotal += ps;
+  }
+  const okParts = partList.every((p) => p.size > 0) && partTotal === total;
+  if (!okParts) {
+    throw new Error("Parcalama hatasi: " + partTotal + " / " + total + " bayt");
+  }
+
+  // SHA256 (birlestirme sonrasi dogrulama icin)
+  const crypto = require("crypto");
+  const h = crypto.createHash("sha256");
+  h.update(fs.readFileSync(src));
+  const sha256 = h.digest("hex");
+
   fs.writeFileSync(path.join(dir, "manifest.json"), JSON.stringify({
-    file: name, size: total, chunks: idx, chunkSize: CHUNK_SIZE,
+    file: name,
+    size: total,
+    chunks: idx,
+    chunkSize: CHUNK_SIZE,
+    sha256,
+    parts: partList,
     createdAt: new Date().toISOString()
   }, null, 2) + "\n", "utf8");
 
@@ -897,9 +932,24 @@ async function bigFileAddFlow(cat, ctx) {
   const category = cat.categories[0];
   const id = nextId(cat);
 
-  // Parcalama
-  ctx.setResult("PARCALANIYOR", [path.basename(src) + " (" + (size / 1073741824).toFixed(2) + " GB)"]);
-  const up = splitFile(src);
+  // Parcalama (buyuk dosya oldugu icin uyari)
+  const parts = Math.ceil(size / CHUNK_SIZE);
+  ctx.setResult("PARCALANIYOR", [
+    path.basename(src),
+    "Boyut : " + (size / 1073741824).toFixed(2) + " GB",
+    "Parca : " + parts + " x " + (CHUNK_SIZE / 1048576).toFixed(0) + " MB",
+    "",
+    "Bu islem birkac dakika surebilir. Devam?"
+  ]);
+  if (!await ctx.ask("Devam (e):")) { ctx.setResult("IPTAL", ["Parcalama iptal."]); return; }
+
+  let up;
+  try {
+    up = splitFile(src);
+  } catch (e) {
+    ctx.setResult("HATA", ["Parcalama basarisiz: " + e.message, "Diskte yer olmayabilir."]);
+    return;
+  }
 
   // Kapak
   let cover = null;
@@ -937,7 +987,8 @@ async function bigFileAddFlow(cat, ctx) {
       fileName: path.basename(src),
       fileSize: up.size,
       baseUrl: up.rel,
-      manifestUrl: up.rel + "/manifest.json"
+      manifestUrl: up.rel + "/manifest.json",
+      filePath: CHUNK_DIR + "\\" + up.base
     }
   };
   cat.games.push(g);
@@ -957,6 +1008,13 @@ async function bigFileAddFlow(cat, ctx) {
     "Sayfa      : " + gameUrl(g.id)
   ].filter(Boolean));
   ctx.pop();
+}
+
+function sizeOfChunks(g) {
+  if (!g.chunked) return "";
+  const n = g.chunked.chunkCount || 0;
+  const sz = (g.chunked.fileSize || 0) / 1073741824;
+  return n + " parca / " + sz.toFixed(1) + " GB";
 }
 
 /* ==================== ANA MENU ==================== */

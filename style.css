@@ -585,7 +585,11 @@ h1, h2, h3, p { margin: 0; }
 
 
 /* ---------- Parcali buyuk dosya indirme ---------- */
-.chunk-toast { position: fixed; right: 18px; bottom: 18px; z-index: 900; width: 320px; background: var(--bg-raised, #1a1d26); border: 1px solid var(--border, #2a3040); border-radius: 12px; padding: 14px; box-shadow: 0 14px 40px rgba(0,0,0,.5); }
-.chunk-bar { height: 8px; background: var(--bg, #12151d); border-radius: 999px; overflow: hidden; margin-bottom: 9px; }
+.chunk-toast { position: fixed; right: 18px; bottom: 18px; z-index: 900; width: 340px; background: var(--bg-raised, #1a1d26); border: 1px solid var(--border, #2a3040); border-radius: 14px; padding: 14px 16px; box-shadow: 0 16px 50px rgba(0,0,0,.55); }
+.chunk-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.chunk-name { font-size: .86rem; font-weight: 700; color: var(--text, #eee); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chunk-x { flex: none; width: 22px; height: 22px; border: none; border-radius: 50%; background: var(--bg, #12151d); color: var(--text-dim, #99a); cursor: pointer; font-size: .7rem; line-height: 1; }
+.chunk-x:hover { background: var(--err, #ef4444); color: #fff; }
+.chunk-bar { height: 9px; background: var(--bg, #12151d); border-radius: 999px; overflow: hidden; margin-bottom: 9px; }
 .chunk-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--primary, #5a6cf0), var(--accent, #8b5cf6)); transition: width .25s; }
-.chunk-txt { font-size: .8rem; color: var(--text-dim, #99a); text-align: center; }
+.chunk-txt { font-size: .76rem; color: var(--text-dim, #99a); text-align: center; }

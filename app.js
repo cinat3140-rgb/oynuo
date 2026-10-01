@@ -772,7 +772,87 @@ var version = g.latestVersion ? g.latestVersion.version : (g.version || null);
     return '<div class="info-row"><span class="k">' + esc(k) + "</span><span class='v'>" + esc(v) + "</span></div>";
   }
 
-  /* ---------- Router ---------- */
+/* ---------- Parcali buyuk dosya indirme (GTA V tarzi) ---------- */
+  var chunkAbort = null;
+
+  function chunkUrl(p) { return String(p).replace(/^https?:\/\//i, ""); }
+
+  function fmtEta(sec) {
+    if (!sec || sec <= 0) return "";
+    var h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = Math.floor(sec % 60);
+    if (h) return h + "s " + m + "dk";
+    if (m) return m + "dk " + s + "sn";
+    return s + "sn";
+  }
+
+  function downloadChunked(gameId) {
+    var games = (state.catalog && state.catalog.games) || [];
+    var g = games.filter(function (x) { return String(x.id) === String(gameId); })[0];
+    if (!g || !g.chunked || !g.chunked.enabled) return;
+    if (chunkAbort) { console.log("Zaten bir indirme suruyor"); return; }
+
+    var ch = g.chunked;
+    var base = chunkUrl(ch.baseUrl);
+    var parts = ch.chunkCount || 0;
+    var total = ch.fileSize || 0;
+    var done = 0;
+    var aborted = false;
+    chunkAbort = function () { aborted = true; };
+
+    var box = document.createElement("div");
+    box.className = "chunk-toast";
+    box.innerHTML =
+      '<div class="chunk-head"><b class="chunk-name"></b>' +
+      '<button class="chunk-x" title="Iptal">\u2715</button></div>' +
+      '<div class="chunk-bar"><div class="chunk-fill"></div></div>' +
+      '<div class="chunk-txt">hazirliyor...</div>';
+    document.body.appendChild(box);
+    var fill = box.querySelector(".chunk-fill");
+    var txt = box.querySelector(".chunk-txt");
+    box.querySelector(".chunk-name").textContent = g.title;
+
+    function finish(msg, ok) {
+      txt.textContent = msg;
+      setTimeout(function () { box.remove(); chunkAbort = null; }, ok ? 2500 : 6000);
+    }
+
+    box.querySelector(".chunk-x").addEventListener("click", function () {
+      aborted = true;
+      txt.textContent = "Iptal ediliyor...";
+    });
+
+    function step(i) {
+      if (aborted) { finish("Iptal edildi.", false); return; }
+      if (i > parts) { finish("Tamamlandi - " + parts + " parca indirildi.", true); return; }
+      var url = base + "/part-" + String(i).padStart(3, "0") + ".bin";
+      var started = Date.now();
+      fetch(url, { cache: "no-store" }).then(function (r) {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.blob();
+      }).then(function (b) {
+        if (aborted) throw new Error("__abort__");
+        done += b.size;
+        var pct = total > 0 ? Math.min(100, Math.round((done / total) * 100)) : Math.round((done / parts) * 100);
+        var sp = b.size / Math.max(1, (Date.now() - started) / 1000);
+        var left = total > done ? (total - done) / Math.max(1, sp) : 0;
+        fill.style.width = pct + "%";
+        txt.textContent = pct + "% - " + i + "/" + parts + " parca - " + fmtBytes(done) +
+          (sp > 0 ? " - " + fmtBytes(sp) + "/sn" : "") + (left > 0 ? " - " + fmtEta(left) + " kaldi" : "");
+        setTimeout(function () { step(i + 1); }, 60);
+      }).catch(function (e) {
+        if (aborted || e.message === "__abort__") { finish("Iptal edildi.", false); return; }
+        finish("Hata: " + e.message, false);
+      });
+    }
+    step(1);
+  }
+
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest ? e.target.closest("[data-chunked-download]") : null;
+    if (!b) return;
+    e.preventDefault();
+    downloadChunked(b.getAttribute("data-chunked-download"));
+  });  /* ---------- Router ---------- */
 
   function parseHash() {
     var h = location.hash.replace(/^#\/?/, "");
