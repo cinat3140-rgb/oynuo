@@ -420,8 +420,22 @@ async function linkGameAddFlow(cat, ctx) {
         const cover = c._lgCover || "images/placeholder.png";
         const dev = c._lgDev || "";
 
-        // Platform link ile uyumsuzsa duzelt
-        const isTorrent = info.providerKey === "magnet" || plat.key === "torrent";
+        // Bu yontem sadece PC icin tasarlandi
+        if (plat.key !== "pc") {
+          c.setResult("UYARI", [
+            plat.badge + " kategorisi icin bu yontem uygun degil.",
+            "",
+            "PC disi kategorilerde:",
+            "  - Torrent : magnet ya da .torrent dosyasi sec",
+            "  - APK     : APK dosyasi sec",
+            "",
+            "Platformu PC olarak degistirip tekrar dene, ya da",
+            "ana menudeki uygun yontemi kullan.",
+          ]);
+          return;
+        }
+
+        const isTorrent = info.providerKey === "magnet";
 
         const g = await doAdd(cat, {
           title, platform: plat,
@@ -448,15 +462,18 @@ async function linkGameAddFlow(cat, ctx) {
       } },
     { label: "Bilgi", run: c => { c.setResult("LIKLE OYUN EKLEME", [
         "Bu yontemde dosya BIZE GELMEZ - sadece adres kaydedilir.",
+        "Sadece PC kategorisi icin gecerlidir.",
         "",
-        "MediaFire / PixelDrain :",
-        "  Uygulama baglantiyi cozer, gercek dosya adresini alir,",
-        "  8 paralel baglantiyla indirir, arsivi acar, oyunu calistirir.",
+        "PC oyununda ne olur:",
+        "  1) 'Indir' butonuna basin",
+        "  2) Uygulama baglantiyi cozer (MediaFire/gofile/pixeldrain)",
+        "  3) Gercek adresi alir, 8 paralel baglantiyla indirir",
+        "  4) .7z/.rar/.zip arsivi 7-Zip ile acar",
+        "  5) Icindeki oyun otomatik calisir",
         "",
-        "Gofile / 1fichier / MEGA :",
-        "  Bu siteler JavaScript ile calisir, otomatik cozulemez.",
-        "  Uygulama indirme sayfasini tarayicida acar,",
-        "  oradaki 'Download' butonuna basman yeterli.",
+        "Torrent / APK kategorilerinde bu yontem kullanilmaz:",
+        "  - Torrent: magnet ya da .torrent istemciye acilir",
+        "  - APK: Android cihazda kurulur",
         "",
         "Boyut siniri YOK - 2 GB, 100 GB oyunlar eklenebilir.",
         "Link her zaman calisir durumda kalmali.",
