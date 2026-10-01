@@ -71,8 +71,17 @@ function parseSize(r) {
 }
 
 /* ---------------- katalog yazma ---------------- */
+// Katalog surumu: her kayitta artar. Site + PC uygulamasi bunu
+// "v0" yerine gercek surum olarak gosterir.
+function nextVersion(cat) {
+  const cur = Number(cat.version || 0);
+  const next = (isFinite(cur) && cur > 0 ? cur : 0) + 1;
+  cat.version = next;
+  return next;
+}
 function save(cat) {
   cat.games.sort((a, b) => b.id - a.id);
+  nextVersion(cat);
   fs.writeFileSync(CATALOG, JSON.stringify(cat, null, 2) + "\n", "utf8");
 }
 function syncLauncherCatalog(cat) {
