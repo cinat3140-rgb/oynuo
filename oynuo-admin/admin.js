@@ -9,6 +9,7 @@ const path = require("path");
 const https = require("https");
 const { execSync } = require("child_process");
 const U = require("./ui.js");
+const L = require("./linkinfo.js");
 
 const ROOT = path.resolve(__dirname, "..");
 const CATALOG = path.join(ROOT, "catalog.json");
@@ -349,6 +350,130 @@ async function uploadFlow(cat, ctx, platform, category, title) {
    Mod 2: "n" yazarsin  -> dosya secilir, kopyalanir, katalog'a yazilir
    Torrent dosyalari (.torrent) her iki yerde de calisir
    ================================================================ */
+/* ==================== LİNKLE OYUN EKLEME ====================
+   Admin'de link yapıştırırsın; dosya bize gelmez.
+   Uygulama oyunu indirir, arşivi açar, çalıştırır.
+   Sağlayıcı tanınır (MediaFire/gofile/pixeldrain...),
+   gerçek dosya adı ve boyutu okunur.
+   ================================================================ */
+async function linkGameAddFlow(cat, ctx) {
+  ctx.push("LIKLE OYUN EKLE", [
+    { label: "Oyun adi gir", run: async c => {
+        c._lgTitle = await c.ask("Oyun adi:");
+        c.setResult("OYUN ADI", [c._lgTitle || "(bos - iptal)"]);
+      } },
+    { label: "Indirme linkini yapistir", run: async c => {
+        const url = await c.ask("Link (mediafire / gofile / dogrudan / magnet):");
+        if (!url) { c.setResult("IPTAL", ["Link girilmedi."]); return; }
+        const t = url.trim();
+        if (!isUrl(t) && !t.startsWith("magnet:")) {
+          c.setResult("HATA", ["Gecersiz link. http/https ile baslamali ya da magnet: ile."]);
+          return;
+        }
+        c.setResult("LINK ANALIZ EDILIYOR...", ["Baglanti okunuyor, dosya adi ve boyut araniyor..."]);
+        let info;
+        try {
+          info = L.analyzeLink(t);
+        } catch (e) {
+          c.setResult("HATA", ["Baglanti analiz edilemedi: " + e.message]);
+          return;
+        }
+        c._lgLink = info;
+        const lines = [
+          "Saglayici : " + info.provider + "  (" + info.mode + ")",
+          "Dosya     : " + (info.fileName || "(bilinmiyor)"),
+          "Boyut     : " + L.formatBytes(info.sizeBytes),
+          "",
+        ];
+        if (info.realUrl !== t) lines.push("Cozulen adres:", info.realUrl.slice(0, 60));
+        if (info.note) { lines.push(""); lines.push(info.note); }
+        lines.push("");
+        lines.push("Dosya bize yuklenmedi - sadece adres kaydedilecek.");
+        c.setResult("BAGLANTI HAZIR", lines);
+      } },
+    { label: "Platform sec", run: c => {
+        platformMenu(c, p => { c._lgPlat = p; c.setResult("PLATFORM", [p.badge]); c.pop(); });
+      } },
+    { label: "Kategori sec", run: c => {
+        categoryMenu(cat, c, k => { c._lgCat = k; c.setResult("KATEGORI", [k.name]); c.pop(); });
+      } },
+    { label: "Kapak gorseli sec", run: async c => {
+        const src = pickFile("Gorseller (*.png;*.jpg;*.jpeg;*.webp)|*.png;*.jpg;*.jpeg;*.webp");
+        if (!src) { c.setResult("IPTAL", []); return; }
+        const id = nextId(cat);
+        const dir = path.join(ROOT, "games", String(id));
+        fs.mkdirSync(dir, { recursive: true });
+        fs.copyFileSync(src, path.join(dir, "cover.png"));
+        c._lgCover = "games/" + id + "/cover.png";
+        c.setResult("KAPAK", [c._lgCover]);
+      } },
+    { label: "Gelistirici / aciklama", run: async c => {
+        c._lgDev = await c.ask("Gelistirici (bos = gec):") || "";
+        c.setResult("GELISTIRICI", [c._lgDev || "(bos)"]);
+      } },
+    { label: "LISTEYE EKLE ve yayinla", run: async c => {
+        const title = c._lgTitle;
+        const info = c._lgLink;
+        if (!title) { c.setResult("HATA", ["Once oyun adi gir."]); return; }
+        if (!info) { c.setResult("HATA", ["Once indirme linkini yapistir."]); return; }
+        const plat = c._lgPlat || PLATFORMS[0];
+        const cover = c._lgCover || "images/placeholder.png";
+        const dev = c._lgDev || "";
+
+        // Platform link ile uyumsuzsa duzelt
+        const isTorrent = info.providerKey === "magnet" || plat.key === "torrent";
+
+        const g = await doAdd(cat, {
+          title, platform: plat,
+          category: c._lgCat || cat.categories[0],
+          version: "1.0.0", developer: dev, cover,
+          link: info.realUrl,
+          sizeBytes: info.sizeBytes,
+          fileName: info.fileName || title,
+        });
+        const res = await pushGit(cat, "Oyun eklendi (link): " + g.title + " [" + info.provider + "] (admin araci)", true);
+        c.setResult("EKLENDI: " + g.title, [
+          ...res,
+          "",
+          "Saglayici : " + info.provider,
+          "Dosya     : " + (info.fileName || "-"),
+          "Boyut     : " + L.formatBytes(info.sizeBytes),
+          "Sayfa     : " + gameUrl(g.id),
+          "",
+          isTorrent
+            ? "Torrent istemcisi acilacak."
+            : "Uygulamada 'Indir' butonu dosyayi indirir, arsivi acar, oyunu calistirir.",
+        ]);
+        c.pop(); c.pop();
+      } },
+    { label: "Bilgi", run: c => { c.setResult("LIKLE OYUN EKLEME", [
+        "Bu yontemde dosya BIZE GELMEZ - sadece adres kaydedilir.",
+        "",
+        "MediaFire / PixelDrain :",
+        "  Uygulama baglantiyi cozer, gercek dosya adresini alir,",
+        "  8 paralel baglantiyla indirir, arsivi acar, oyunu calistirir.",
+        "",
+        "Gofile / 1fichier / MEGA :",
+        "  Bu siteler JavaScript ile calisir, otomatik cozulemez.",
+        "  Uygulama indirme sayfasini tarayicida acar,",
+        "  oradaki 'Download' butonuna basman yeterli.",
+        "",
+        "Boyut siniri YOK - 2 GB, 100 GB oyunlar eklenebilir.",
+        "Link her zaman calisir durumda kalmali.",
+      ]); } }
+  ]);
+  ctx.setResult("LIKLE OYUN EKLEME", [
+    "Adimlar:",
+    "  1) Oyun adi gir",
+    "  2) Indirme linkini yapistir (otomatik analiz edilir)",
+    "  3) Platform + kategori sec",
+    "  4) Kapak sec (istege bagli)",
+    "  5) LISTEYE EKLE ve yayinla",
+    "",
+    "Dosya hicbir zaman bize yuklenmez.",
+  ]);
+}
+
 async function addFlow(cat, ctx) {
   const title = await ctx.ask("Oyun adi:");
   if (!title) { ctx.setResult("IPTAL", ["Oyun adi bos."]); return; }
@@ -1033,6 +1158,7 @@ function buildMenu(cat) {
     subtitle: cat.games.length + " OYUN  |  " + cat.upcomingGames.length + " YAKINDA  |  " + U.CFG.theme.toUpperCase() + " TEMA",
     items: [
       { label: U.c(U.T.ok, ">>") + "  Yeni oyun ekle", run: async ctx => { await addFlow(cat, ctx); } },
+      { label: U.c(U.T.ok, "L") + "  LIKLE OYUN EKLE (dosya indirme)", hint: "MediaFire/gofile - uygulama indirir", run: ctx => { linkGameAddFlow(cat, ctx); } },
       { label: U.c(U.T.ok, "@") + "  TORRENT EKLE (.torrent dosyasi sec)", hint: "HIZLI YOL - tek adimda torrent ekler", run: ctx => { torrentQuickAdd(cat, ctx); } },
       { label: U.c(U.T.warn, "B") + "  BUYUK DOSYA EKLE (2GB+ oyun)", hint: "GTA V gibi - parcalara bolup yukler", run: ctx => { bigFileAddFlow(cat, ctx); } },
       { label: U.c(U.T.accent, "*") + "  Toplu oyun ekleme (liste)", run: ctx => { importMenu(cat, ctx); } },
@@ -1129,7 +1255,24 @@ async function cli() {
     } else {
       const link = f.link || f.l || "";
       if (link && plat.key !== "torrent" && !isUrl(link)) { out(U.c(U.T.err, "Hata: gecersiz link (http/https olmali) ya da --file <dosya> kullan")); return; }
-      g = await doAdd(cat, { title, platform: plat, category, link, version: f.version || "1.0.0", developer: f.dev || "", publisher: f.pub || "", genre: f.genre || "", description: f.desc || "", featured: f.featured === "1", sizeBytes: parseSize(f.size) });
+      // Link verildiyse analiz et: saglayici, gercek dosya adi, boyut
+      let realLink = link;
+      let autoName = "";
+      let autoSize = parseSize(f.size);
+      if (link) {
+        try {
+          const info = L.analyzeLink(link);
+          realLink = info.realUrl;
+          autoName = info.fileName || "";
+          if (!autoSize) autoSize = info.sizeBytes;
+          U.write(U.D("  " + info.provider + " | " + (info.fileName || "?") + " | " + L.formatBytes(info.sizeBytes)));
+          if (info.note) U.write(U.D("  " + info.note));
+          U.write("");
+        } catch (e) {
+          U.warn("Baglanti analiz edilemedi, oldu gibi kaydediliyor: " + e.message);
+        }
+      }
+      g = await doAdd(cat, { title, platform: plat, category, link: realLink, version: f.version || "1.0.0", developer: f.dev || "", publisher: f.pub || "", genre: f.genre || "", description: f.desc || "", featured: f.featured === "1", sizeBytes: autoSize, fileName: f.name || autoName || undefined });
     }
     const res = await pushGit(cat, "Oyun eklendi: " + g.title + " [" + plat.badge + "] (admin araci)", f["no-push"] !== "1");
     out(U.B("EKLENDI: " + g.title) + "\n" + res.map(r => U.D("  " + r)).join("\n") + "\n  " + U.c(U.T.accent, gameUrl(g.id)));
