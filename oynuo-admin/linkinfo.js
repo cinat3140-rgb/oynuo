@@ -74,14 +74,16 @@ function detectProvider(url) {
   const u = String(url || "").toLowerCase();
   if (u.startsWith("magnet:")) return { key: "magnet", name: "Magnet", mode: "torrent" };
   if (u.includes("mediafire.com")) return { key: "mediafire", name: "MediaFire", mode: "cozulebilir" };
-  if (u.includes("gofile.io")) return { key: "gofile", name: "Gofile", mode: "tarayici" };
-  if (u.includes("pixeldrain.com")) return { key: "pixeldrain", name: "PixelDrain", mode: "cozulebilir" };
+  if (u.includes("pixeldrain.com")) return { key: "pixeldrain", name: "Pixeldrain", mode: "cozulebilir" };
+  if (u.includes("filebin.net")) return { key: "filebin", name: "Filebin", mode: "cozulebilir" };
+  if (u.includes("dropbox.com")) return { key: "dropbox", name: "Dropbox", mode: "cozulebilir" };
+  if (u.includes("drive.google.com") || u.includes("drive.usercontent")) return { key: "gdrive", name: "Google Drive", mode: "cozulebilir" };
+  if (u.includes("uploadhaven.com")) return { key: "uploadhaven", name: "Uploadhaven", mode: "cozulebilir" };
+  if (u.includes("krakenfiles.com")) return { key: "krakenfiles", name: "Krakenfiles", mode: "cozulebilir" };
+  if (u.includes("gofile.io")) return { key: "gofile", name: "Gofile", mode: "gofile" };
+  if (u.includes("mega.nz") || u.includes("mega.co.nz")) return { key: "mega", name: "MEGA", mode: "tarayici" };
   if (u.includes("1fichier.com")) return { key: "1fichier", name: "1fichier", mode: "tarayici" };
   if (u.includes("mixdrop.co") || u.includes("mixdrop.me")) return { key: "mixdrop", name: "MixDrop", mode: "tarayici" };
-  if (u.includes("mega.nz") || u.includes("mega.co.nz")) return { key: "mega", name: "MEGA", mode: "tarayici" };
-  if (u.includes("dropbox.com")) return { key: "dropbox", name: "Dropbox", mode: "dogrudan" };
-  if (u.includes("drive.google.com")) return { key: "gdrive", name: "Google Drive", mode: "tarayici" };
-  if (u.includes("github.com") || u.includes("githubusercontent.com")) return { key: "github", name: "GitHub", mode: "dogrudan" };
   if (/\.(torrent)$/i.test(u)) return { key: "torrentfile", name: "Torrent dosyasi", mode: "torrent" };
   if (/\.(zip|rar|7z|exe|msi|iso|apk)$/i.test(u)) return { key: "dosya", name: "Dogrudan dosya", mode: "dogrudan" };
   return { key: "bilinmiyor", name: "Bilinmeyen site", mode: "dogrudan" };
@@ -123,8 +125,46 @@ function analyzeLink(url) {
 
   if (provider.mode === "tarayici") {
     out.fileName = "(tarayicida belirlenir)";
-    out.note = "Bu site JavaScript ile calisiyor - uygulama indirme sayfasini tarayicida acar, ordan indir butonuna basarsin.";
+    if (provider.key === "gofile") {
+      out.note = "Gofile yeni koruma katti - API erisimi kisitli. Uygulama indirme sayfasini tarayicida acar.";
+    } else {
+      out.note = "Bu site JavaScript ile calisiyor - uygulama indirme sayfasini tarayicida acar, ordan indir butonuna basarsin.";
+    }
     return out;
+  }
+
+  // Kural tabanli siteler: URL donusumu ile dogrudan indirme adresi
+  const KURAL = {
+    pixeldrain: (u) => {
+      const id = u.replace(/\?.*$/, "").replace(/\/$/, "").split("/").pop();
+      return { url: `https://pixeldrain.com/api/file/${id}`, name: id };
+    },
+    filebin: (u) => {
+      const p = u.split("filebin.net/")[1].replace(/\?.*$/, "").replace(/^\/|\/$/g, "");
+      return { url: `https://filebin.net/download/${p}`, name: p.split("/").pop() };
+    },
+    dropbox: (u) => {
+      const url = u.includes("dl=0") ? u.replace("dl=0", "dl=1")
+        : u.includes("dl=") ? u
+        : u + (u.includes("?") ? "&" : "?") + "raw=1";
+      return { url, name: u.split("?")[0].split("/").pop() };
+    },
+    gdrive: (u) => {
+      const id = u.includes("/d/") ? u.split("/d/")[1].split(/[\/?#]/)[0]
+        : u.includes("id=") ? u.split("id=")[1].split(/[&#]/)[0] : "";
+      return { url: `https://drive.usercontent.google.com/download?id=${id}&export=download`, name: `google-drive-${id}` };
+    },
+  };
+
+  if (KURAL[provider.key]) {
+    try {
+      const r = KURAL[provider.key](url.trim());
+      out.realUrl = r.url;
+      out.fileName = r.name || "dosya";
+      out.note = "Uygulama baglantiyi cozup cok parcali indirir, arsivi acar, oyunu calistirir.";
+    } catch {
+      out.note = "Baglanti cozulemedi ama kaydedilebilir.";
+    }
   }
 
   // cozulebilir / dogrudan: sayfayi veya header'i oku
