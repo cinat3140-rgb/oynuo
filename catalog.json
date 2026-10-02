@@ -1,5 +1,5 @@
 {
-  "version": 4,
+  "version": 5,
   "categories": [
     {
       "id": 1,
@@ -201,9 +201,9 @@
           "id": 8,
           "versionId": 8,
           "source": "external",
-          "kind": "file",
-          "fileName": "indirme-sayfasi",
-          "fileSize": 0,
+          "kind": "archive",
+          "fileName": "GTA V NEGLIGENT V3 optijuegos.net",
+          "fileSize": 2458868777,
           "sha256": "",
           "executablePath": "",
           "downloadUrl": "https://www.mediafire.com/file/ulm87wkhidz3lhk"
