@@ -1,5 +1,5 @@
 {
-  "version": 8,
+  "version": 9,
   "categories": [
     {
       "id": 1,
@@ -101,65 +101,7 @@
       "gameCount": 0
     }
   ],
-  "games": [
-    {
-      "id": 31,
-      "title": "Backrooms: Escape Together",
-      "description": "Bir araştırmacı ekibi olarak, bu tekinsiz labirent (liminal labyrinth) hakkında daha fazla bilgi toplamak üzere Backrooms'a gönderiliyorsunuz. Ancak araştırma görevlerinizi tamamladıktan sonra, bir asansör arızası sizi en tehlikeli katların kalbine doğru hızla düşürerek, geriye tek bir amaç bırakıyor: kaçmak ve hayatta kalmak. Şu anda oynanabilir tek bölüm 0. Kat'tır. Bir giriş niteliğinde olan bu bölümde ekibiniz çeşitli araştırma görevlerini yerine getirmekle yükümlüdür. Bu görevler arasında varlıkların ve önemli noktaların kaydını tutmak, Backrooms hakkında veri toplamak ve kanıt niteliğindeki VHS kasetlerini bulmak yer alabilir. Unreal Engine 5 ile geliştirilen *Backrooms: Escape Together*, Backrooms'un ruhunu gerçekten yansıtan ilk yapım olacak. Bölümler prosedürel olarak oluşturulacak, çarpıcı bir kalitede dinamik ışıklandırmaya sahip olacak ve detaylarla zenginleştirilecektir. Oyunu gerçek bir Backrooms deneyimine dönüştürürken, erken erişim süreci boyunca sürekli yeni bölümler eklenecektir. Yeni nesil grafikler, prosedürel olarak oluşturulan bölümler, özenle hazırlanmış ses tasarımları ve oyuncuyu içine çeken bir oynanış; kendinizi gerçekten Backrooms'ta sıkışıp kalmış, yolunu kaybetmiş bir gezgin gibi hissetmenizi sağlayacak.",
-      "developer": "SteamRIP",
-      "publisher": "SteamRIP",
-      "releaseDate": "2026-09-29T19:35:41.149Z",
-      "categoryId": 7,
-      "genre": "Horror",
-      "platform": "pc",
-      "isFeatured": false,
-      "membersOnly": false,
-      "popularity": 0,
-      "stats": {
-        "views": 0,
-        "downloads": 0
-      },
-      "coverUrl": "games/31/cover.png",
-      "bannerUrl": null,
-      "requirements": {
-        "minimum": {},
-        "recommended": {}
-      },
-      "versions": [
-        {
-          "id": 31,
-          "version": "1.0.0",
-          "changelog": "",
-          "releasedAt": "2026-09-29T19:35:41.149Z"
-        }
-      ],
-      "latestVersion": {
-        "id": 31,
-        "version": "1.0.0",
-        "changelog": "",
-        "releasedAt": "2026-09-29T19:35:41.149Z"
-      },
-      "latestFiles": [
-        {
-          "id": 31,
-          "versionId": 31,
-          "source": "external",
-          "kind": "file",
-          "fileName": "Backrooms.Escape.Together.rar",
-          "fileSize": 13764476203,
-          "sha256": "",
-          "executablePath": "",
-          "downloadUrl": "https://gofile.io/d/uCNsCt"
-        }
-      ],
-      "torrent": null,
-      "apk": null,
-      "screenshots": [],
-      "category": "horror",
-      "createdAt": "2026-09-29T19:35:41.149Z",
-      "popularityLabel": ""
-    }
-  ],
+  "games": [],
   "appUpdate": {
     "updateAvailable": true,
     "latest": {
