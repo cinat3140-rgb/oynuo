@@ -391,6 +391,43 @@ async function linkGameAddFlow(cat, ctx) {
         lines.push("Dosya bize yuklenmedi - sadece adres kaydedilecek.");
         c.setResult("BAGLANTI HAZIR", lines);
       } },
+    { label: "Yedek link ekle (AYNA - hizli indirme)", run: async c => {
+        c._lgMirrors = c._lgMirrors || [];
+        c.push("AYNA (YEDEK) LINKLERI", [
+          { label: "Mevcut aynalari gor", run: cc => {
+              const l = (c._lgMirrors || []).map((m, i) => (i + 1) + ". " + m);
+              cc.setResult("AYNA LISTESI", l.length ? l : ["(henuz ayna yok)"]);
+            } },
+          { label: "Ayna ekle", run: async cc => {
+              const u = await cc.ask("Ayna linki (yoksa bos birak):");
+              if (!u) { cc.setResult("IPTAL", [""]); return; }
+              const s = u.trim();
+              if (!isUrl(s)) { cc.setResult("HATA", ["Gecersiz link."]); return; }
+              c._lgMirrors.push(s);
+              cc.setResult("AYNA EKLENDI", [s, "", "Toplam: " + c._lgMirrors.length]);
+              cc.pop();
+            } },
+          { label: "Son aynayi sil", run: cc => {
+              if (!c._lgMirrors.length) { cc.setResult("BILGI", ["Ayna yok."]); return; }
+              c._lgMirrors.pop();
+              cc.setResult("SILINDI", ["Kalan: " + c._lgMirrors.length]);
+              cc.pop();
+            } },
+          { label: "Tum aynalari temizle", run: cc => {
+              c._lgMirrors = [];
+              cc.setResult("TEMIZLENDI", []);
+              cc.pop();
+            } },
+          { label: "BITIR", run: cc => {
+              const n = (c._lgMirrors || []).length;
+              cc.setResult("AYNA DURUMU", [
+                n ? n + " ayna eklendi. Uygulama indirmeden once hepsini olcup en hizlisini secer."
+                  : "Ayna yok. Ana link kullanilacak.",
+              ]);
+              cc.pop();
+            } },
+        ]);
+      } },
     { label: "Platform sec", run: c => {
         platformMenu(c, p => { c._lgPlat = p; c.setResult("PLATFORM", [p.badge]); c.pop(); });
       } },
@@ -444,6 +481,7 @@ async function linkGameAddFlow(cat, ctx) {
           link: info.realUrl,
           sizeBytes: info.sizeBytes,
           fileName: info.fileName || title,
+          mirrors: (c._lgMirrors || []).slice(),
         });
         const res = await pushGit(cat, "Oyun eklendi (link): " + g.title + " [" + info.provider + "] (admin araci)", true);
         c.setResult("EKLENDI: " + g.title, [
@@ -654,7 +692,9 @@ async function doAdd(cat, o) {
   } else if (o.platform.key === "apk" && o.link) {
     g.apk = { url: o.link };
   } else if (o.link) {
-    g.latestFiles.push({ id, versionId: id, source: "external", kind: "file", fileName: o.fileName || o.title, fileSize: o.sizeBytes || 0, sha256: "", executablePath: "", downloadUrl: o.link });
+    const _f = { id, versionId: id, source: "external", kind: "file", fileName: o.fileName || o.title, fileSize: o.sizeBytes || 0, sha256: "", executablePath: "", downloadUrl: o.link };
+    if (o.mirrors && o.mirrors.length) _f.mirrors = o.mirrors.slice();
+    g.latestFiles.push(_f);
   }
   cat.games.push(g);
   return g;
@@ -688,6 +728,53 @@ function editMenu(cat, ctx) {
               }
             }
             c3.setResult("GUNCELLENDI", ["Link: " + (v || "(yok - yakinda)")]); c3.pop();
+          } },
+        { label: "AYNA YONETIMI (hizli indirme)", run: c3 => {
+            const f = (g.latestFiles || [])[0];
+            if (!f) { c3.setResult("HATA", ["Bu oyunda dosya/link yok."]); return; }
+            f.mirrors = Array.isArray(f.mirrors) ? f.mirrors : [];
+            c3.push("AYNA YONETIMI: " + U.trunc(g.title, 30), [
+              { label: "Mevcut aynalari gor", run: cc => {
+                  const l = f.mirrors.map((m, i) => (i + 1) + ". " + m);
+                  cc.setResult("AYNA LISTESI (" + f.mirrors.length + ")", l.length ? l : ["(ayna yok - sadece ana link kullanilacak)"]);
+                } },
+              { label: "Ayna ekle", run: async cc => {
+                  const u = await cc.ask("Ayna linki (yoksa bos birak):");
+                  if (!u) { cc.setResult("IPTAL", [""]); return; }
+                  const s = u.trim();
+                  if (!isUrl(s)) { cc.setResult("HATA", ["Gecersiz link."]); return; }
+                  if (f.mirrors.includes(s)) { cc.setResult("AYNI", ["Bu link zaten var."]); return; }
+                  f.mirrors.push(s);
+                  cc.setResult("AYNA EKLENDI", [s, "", "Toplam: " + f.mirrors.length]);
+                  cc.pop();
+                } },
+              { label: "Ayna sil (indis)", run: async cc => {
+                  if (!f.mirrors.length) { cc.setResult("BILGI", ["Ayna yok."]); return; }
+                  const idx = parseInt(await cc.ask("Silinecek ayna numarasi (1-" + f.mirrors.length + "):"), 10);
+                  if (!idx || idx < 1 || idx > f.mirrors.length) { cc.setResult("HATA", ["Gecersiz numara."]); return; }
+                  const rm = f.mirrors.splice(idx - 1, 1)[0];
+                  cc.setResult("SILINDI", [rm, "Kalan: " + f.mirrors.length]);
+                  cc.pop();
+                } },
+              { label: "Tum aynalari temizle", run: cc => {
+                  f.mirrors = [];
+                  cc.setResult("TEMIZLENDI", [""]);
+                  cc.pop();
+                } },
+              { label: "BITIR", run: cc => {
+                  const n = f.mirrors.length;
+                  cc.setResult("AYNA DURUMU", [
+                    "Ana link : " + (f.downloadUrl || "-"),
+                    "Ayna     : " + n + " adet",
+                    "",
+                    n ? "Uygulama indirmeden once " + (n + 1) + " kaynagi olcer ve EN HIZLISINI secer."
+                      : "Ayna yok. Sadece ana link kullanilacak.",
+                    "",
+                    "Degisiklikler 'KAYDET ve GitHub'a gonder' ile kalici olur.",
+                  ]);
+                  cc.pop();
+                } },
+            ]);
           } },
         { label: "Aciklama / gelistirici duzenle", run: async c3 => {
             const d = await c3.ask("Aciklama (bos = degistirme):");

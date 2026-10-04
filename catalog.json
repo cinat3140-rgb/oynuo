@@ -1,5 +1,5 @@
 {
-  "version": 5,
+  "version": 8,
   "categories": [
     {
       "id": 1,
@@ -145,8 +145,8 @@
           "versionId": 31,
           "source": "external",
           "kind": "file",
-          "fileName": "Backrooms: Escape Together",
-          "fileSize": 13421773,
+          "fileName": "Backrooms.Escape.Together.rar",
+          "fileSize": 13764476203,
           "sha256": "",
           "executablePath": "",
           "downloadUrl": "https://gofile.io/d/uCNsCt"
@@ -157,72 +157,6 @@
       "screenshots": [],
       "category": "horror",
       "createdAt": "2026-09-29T19:35:41.149Z",
-      "popularityLabel": ""
-    },
-    {
-      "id": 6,
-      "title": "Grand Theft Auto V (2GB)",
-      "description": "Optimize edilmiÅŸ 2 GB boyutlu GTA V repack'i. Ä°spanyolca aÃ§Ä±klamalarÄ±n yerine temiz TÃ¼rkÃ§e netleÅŸtirilmiÅŸ hali:\n- 2 GB iÃ§erik ve 2 GB iÃ§erik (paket halinde)\n- 1.29 sÃ¼rÃ¼mÃ¼nÃ¼ temel alÄ±r\n- Dokular en iyi karÅŸÄ±laÅŸtÄ±rmalarla en iyi kalitede\n- Self Radio iÃ§ermez\n- Mode Director'a baÄŸlÄ± deÄŸil\n- Radyo, sinema sesi veya gÃ¶rev yok\n- GÃ¶rev devamlÄ±lÄ±ÄŸÄ± yok; serbest mod dÄ±ÅŸÄ±nda fazlasÄ±nÄ± yapabilirsin\n- Ã‡ok sayÄ±da doku kaldÄ±rÄ±ldÄ±\n- HaritanÄ±n %90'Ä± kaldÄ±rÄ±ldÄ±\n- BugÃ¼nÃ¼n en iyi optimizasyonu",
-      "developer": "Optiguejos",
-      "publisher": "Optiguejos",
-      "releaseDate": "2026-09-12T00:00:00.000Z",
-      "categoryId": 1,
-      "genre": "",
-      "platform": "pc",
-      "isFeatured": true,
-      "membersOnly": false,
-      "popularity": 21,
-      "stats": {
-        "views": 17,
-        "downloads": 3
-      },
-      "coverUrl": "games/6/cover.png",
-      "bannerUrl": null,
-      "requirements": {
-        "minimum": {},
-        "recommended": {}
-      },
-      "versions": [
-        {
-          "id": 8,
-          "version": "1.0.0",
-          "changelog": "GTA V 2 GB !!!!",
-          "releasedAt": "2026-09-12T08:41:33.006Z"
-        }
-      ],
-      "latestVersion": {
-        "id": 8,
-        "version": "1.0.0",
-        "changelog": "GTA V 2 GB !!!!",
-        "releasedAt": "2026-09-12T08:41:33.006Z"
-      },
-      "latestFiles": [
-        {
-          "id": 8,
-          "versionId": 8,
-          "source": "external",
-          "kind": "archive",
-          "fileName": "GTA V NEGLIGENT V3 optijuegos.net",
-          "fileSize": 2458868777,
-          "sha256": "",
-          "executablePath": "",
-          "downloadUrl": "https://www.mediafire.com/file/ulm87wkhidz3lhk"
-        }
-      ],
-      "torrent": null,
-      "apk": null,
-      "screenshots": [
-        "games/6/screenshots/screenshot-1789202407405.png"
-      ],
-      "category": {
-        "id": 1,
-        "slug": "action",
-        "name": "Action",
-        "description": null,
-        "sortOrder": 0,
-        "createdAt": "2026-07-31T14:19:45.000Z"
-      },
-      "createdAt": "2026-09-12T08:37:23.000Z",
       "popularityLabel": ""
     }
   ],
